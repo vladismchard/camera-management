@@ -1,0 +1,58 @@
+<!-- frontend/index.html -->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Focus Detector</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Focus Detection System</h1>
+        </header>
+        
+        <main>
+            <div class="video-section">
+                <img id="stream" src="http://localhost:5000/stream" alt="Camera Stream">
+            </div>
+            
+            <div class="metrics-section">
+                <div class="status-card" id="statusCard">
+                    <h2>Status</h2>
+                    <div class="status-indicator" id="statusIndicator"></div>
+                    <p class="status-text" id="statusText">Waiting...</p>
+                </div>
+                
+                <div class="metrics-card">
+                    <h2>Metrics</h2>
+                    <div class="metric">
+                        <span class="metric-label">Current Variance:</span>
+                        <span class="metric-value" id="variance">0.00</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Average Variance:</span>
+                        <span class="metric-value" id="avgVariance">0.00</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Threshold:</span>
+                        <span class="metric-value" id="threshold">0.00</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">History Size:</span>
+                        <span class="metric-value" id="historySize">0</span>
+                    </div>
+                </div>
+                
+                <div class="chart-card">
+                    <h2>History</h2>
+                    <canvas id="chart"></canvas>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <script src="app.js"></script>
+</body>
+</html>
