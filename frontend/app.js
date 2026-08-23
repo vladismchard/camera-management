@@ -1,7 +1,7 @@
 // frontend/app.js
 class FocusDetectionUI {
     constructor() {
-        this.apiUrl = 'http://localhost:5000';
+        this.apiUrl = window.location.protocol + '//' + window.location.hostname + ':5000';
         this.elements = {
             statusIndicator: document.getElementById('statusIndicator'),
             statusText: document.getElementById('statusText'),
@@ -9,9 +9,11 @@ class FocusDetectionUI {
             avgVariance: document.getElementById('avgVariance'),
             threshold: document.getElementById('threshold'),
             historySize: document.getElementById('historySize'),
-            chart: document.getElementById('chart')
+            chart: document.getElementById('chart'),
+            stream: document.getElementById('stream')
         };
         this.chartCtx = this.elements.chart.getContext('2d');
+        this.elements.stream.src = `${this.apiUrl}/stream`;
         this.initMetricsPolling();
     }
 
