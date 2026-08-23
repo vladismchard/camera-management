@@ -5,8 +5,8 @@ import re
 
 class Camera:
     def __init__(self):
-        self.device = self._parse_device(os.getenv('CAMERA_DEVICE', '0'))
         self.cap = None
+        self.device = self._parse_device(os.getenv('CAMERA_DEVICE', '0'))
         self._init_camera()
     
     def _parse_device(self, device_str):
@@ -36,5 +36,5 @@ class Camera:
         return cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, quality])
     
     def __del__(self):
-        if hasattr(self, 'cap') and self.cap:
+        if self.cap is not None:
             self.cap.release()
