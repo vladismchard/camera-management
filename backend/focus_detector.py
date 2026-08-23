@@ -14,13 +14,13 @@ class FocusDetector:
     def calculate_variance(self, frame):
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         laplacian = cv2.Laplacian(gray, cv2.CV_64F)
-        return laplacian.var()
+        return float(laplacian.var())
     
     def analyze(self, frame):
         variance = self.calculate_variance(frame)
         self.history.append(variance)
         self.current_variance = variance
-        self.is_focused = variance > self.threshold
+        self.is_focused = bool(variance > self.threshold)
         
         annotated = self._annotate_frame(frame.copy())
         
@@ -43,11 +43,12 @@ class FocusDetector:
         return frame
     
     def get_metrics(self):
+        history_list = [float(v) for v in self.history]
         return {
-            'current_variance': round(self.current_variance, 2),
-            'is_focused': self.is_focused,
-            'threshold': self.threshold,
-            'history': [round(v, 2) for v in list(self.history)],
-            'avg_variance': round(np.mean(self.history), 2) if self.history else 0.0,
-            'history_size': len(self.history)
+            'current_variance': float(self.current_variance),
+            'is_focused': bool(self.is_focused),
+            'threshold': float(self.threshold),
+            'history': history_list,
+            'avg_variance': float(np.mean(self.history)) if self.history else 0.0,
+            'history_size': int(len(self.history))
         }
