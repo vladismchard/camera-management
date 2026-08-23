@@ -1,9 +1,10 @@
 # docker-compose.yml
-version: '3.8'
-
 services:
   backend:
-    build: ./backend
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    image: focus-detector-backend:latest
     container_name: focus-detector-backend
     ports:
       - "5000:5000"
@@ -14,7 +15,10 @@ services:
     restart: unless-stopped
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: focus-detector-frontend:latest
     container_name: focus-detector-frontend
     ports:
       - "80:80"

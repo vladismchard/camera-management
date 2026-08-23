@@ -1,6 +1,4 @@
 # frontend/Dockerfile
 FROM nginx:alpine
-
-COPY . /usr/share/nginx/html
-
+COPY index.html style.css app.js /usr/share/nginx/html/
 EXPOSE 80
