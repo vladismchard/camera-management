@@ -1,5 +1,5 @@
 // frontend/app.js
-class FocusDetectionUI {
+class WeldingFocusDetectionUI {
     constructor() {
         this.apiUrl = window.location.protocol + '//' + window.location.hostname + ':5000';
         this.elements = {
@@ -10,11 +10,25 @@ class FocusDetectionUI {
             threshold: document.getElementById('threshold'),
             historySize: document.getElementById('historySize'),
             chart: document.getElementById('chart'),
-            stream: document.getElementById('stream')
+            stream: document.getElementById('stream'),
+            captureBtn: document.getElementById('captureBtn'),
+            stitchBtn: document.getElementById('stitchBtn'),
+            clearBtn: document.getElementById('clearBtn'),
+            imageCount: document.getElementById('imageCount'),
+            stitchedResult: document.getElementById('stitchedResult')
         };
         this.chartCtx = this.elements.chart.getContext('2d');
         this.elements.stream.src = `${this.apiUrl}/stream`;
+        
+        this.initEventListeners();
         this.initMetricsPolling();
+        this.updateImageCount();
+    }
+
+    initEventListeners() {
+        this.elements.captureBtn.addEventListener('click', () => this.captureImage());
+        this.elements.stitchBtn.addEventListener('click', () => this.stitchImages());
+        this.elements.clearBtn.addEventListener('click', () => this.clearImages());
     }
 
     initMetricsPolling() {
@@ -28,6 +42,74 @@ class FocusDetectionUI {
             this.updateUI(data);
         } catch (error) {
             console.error('Failed to fetch metrics:', error);
+        }
+    }
+
+    async captureImage() {
+        try {
+            const response = await fetch(`${this.apiUrl}/capture`, { method: 'POST' });
+            const data = await response.json();
+            if (data.status === 'success') {
+                this.elements.imageCount.textContent = data.count;
+                this.elements.stitchBtn.disabled = data.count < 2;
+            }
+        } catch (error) {
+            console.error('Failed to capture image:', error);
+        }
+    }
+
+    async stitchImages() {
+        this.elements.stitchBtn.disabled = true;
+        this.elements.stitchBtn.textContent = 'Stitching...';
+        
+        try {
+            const response = await fetch(`${this.apiUrl}/stitch`, { method: 'POST' });
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                const filename = data.filepath.split('/').pop();
+                this.elements.stitchedResult.innerHTML = `
+                    <img src="${this.apiUrl}/stitched/${filename}?t=${Date.now()}" alt="Stitched Result">
+                    <p style="margin-top: 10px; color: #10b981; font-weight: 600;">Successfully stitched ${data.count} images</p>
+                `;
+            } else {
+                this.elements.stitchedResult.innerHTML = `
+                    <p class="message" style="color: #ef4444;">Error: ${data.error}</p>
+                `;
+            }
+        } catch (error) {
+            this.elements.stitchedResult.innerHTML = `
+                <p class="message" style="color: #ef4444;">Failed to stitch images</p>
+            `;
+            console.error('Failed to stitch images:', error);
+        } finally {
+            this.elements.stitchBtn.disabled = false;
+            this.elements.stitchBtn.textContent = 'Stitch Images';
+        }
+    }
+
+    async clearImages() {
+        try {
+            const response = await fetch(`${this.apiUrl}/clear`, { method: 'POST' });
+            const data = await response.json();
+            if (data.status === 'success') {
+                this.elements.imageCount.textContent = data.count;
+                this.elements.stitchBtn.disabled = true;
+                this.elements.stitchedResult.innerHTML = '<p class="message">Cleared all images</p>';
+            }
+        } catch (error) {
+            console.error('Failed to clear images:', error);
+        }
+    }
+
+    async updateImageCount() {
+        try {
+            const response = await fetch(`${this.apiUrl}/count`);
+            const data = await response.json();
+            this.elements.imageCount.textContent = data.count;
+            this.elements.stitchBtn.disabled = data.count < 2;
+        } catch (error) {
+            console.error('Failed to update count:', error);
         }
     }
 
@@ -90,4 +172,4 @@ class FocusDetectionUI {
     }
 }
 
-new FocusDetectionUI();
+new WeldingFocusDetectionUI();

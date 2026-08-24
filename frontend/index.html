@@ -4,22 +4,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Focus Detector</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Welding Focus Detector</title>
+    <link rel="stylesheet" href="style.css?v=3">
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>Focus Detection System</h1>
+            <h1>Welding Focus Detection & Stitching</h1>
         </header>
         
         <main>
             <div class="video-section">
                 <img id="stream" alt="Camera Stream">
+                <div class="controls">
+                    <button id="captureBtn" class="btn btn-primary">Capture Image</button>
+                    <button id="stitchBtn" class="btn btn-success">Stitch Images</button>
+                    <button id="clearBtn" class="btn btn-danger">Clear All</button>
+                    <span class="counter">Images: <span id="imageCount">0</span></span>
+                </div>
             </div>
             
             <div class="metrics-section">
-                <div class="status-card" id="statusCard">
+                <div class="status-card">
                     <h2>Status</h2>
                     <div class="status-indicator" id="statusIndicator"></div>
                     <p class="status-text" id="statusText">Waiting...</p>
@@ -49,10 +55,15 @@
                     <h2>History</h2>
                     <canvas id="chart"></canvas>
                 </div>
+                
+                <div class="stitched-card">
+                    <h2>Stitched Result</h2>
+                    <div id="stitchedResult"></div>
+                </div>
             </div>
         </main>
     </div>
     
-    <script src="app.js"></script>
+    <script src="app.js?v=3"></script>
 </body>
 </html>

@@ -12,6 +12,8 @@ services:
       - "${CAMERA_DEVICE:-/dev/video0}:/dev/video0"
     environment:
       - CAMERA_DEVICE=${CAMERA_DEVICE:-0}
+    volumes:
+      - ./stitched:/app/stitched
     restart: unless-stopped
 
   frontend:
