@@ -47,14 +47,23 @@ class WeldingFocusDetectionUI {
 
     async captureImage() {
         try {
+            console.log('Capturing image...');
             const response = await fetch(`${this.apiUrl}/capture`, { method: 'POST' });
+            console.log('Response status:', response.status);
             const data = await response.json();
+            console.log('Response data:', data);
+            
             if (data.status === 'success') {
                 this.elements.imageCount.textContent = data.count;
                 this.elements.stitchBtn.disabled = data.count < 2;
+                console.log(`Image captured, total count: ${data.count}`);
+            } else {
+                console.error('Capture failed:', data);
+                alert(`Failed to capture: ${data.error}`);
             }
         } catch (error) {
             console.error('Failed to capture image:', error);
+            alert('Failed to capture image: ' + error.message);
         }
     }
 
