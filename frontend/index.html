@@ -16,12 +16,18 @@
         <main>
             <div class="video-section">
                 <img id="stream" alt="Camera Stream">
-                <div class="controls">
-                    <button id="captureBtn" class="btn btn-primary">Capture Image</button>
-                    <button id="stitchBtn" class="btn btn-success">Stitch Images</button>
-                    <button id="clearBtn" class="btn btn-danger">Clear All</button>
-                    <span class="counter">Images: <span id="imageCount">0</span></span>
-                </div>
+                    <div class="controls">
+                        <button id="captureBtn" class="btn btn-primary">Capture Image</button>
+                        <select id="stitchMethod" class="select">
+                            <option value="horizontal">Horizontal</option>
+                            <option value="vertical">Vertical</option>
+                            <option value="grid">Grid</option>
+                            <option value="panorama">Panorama (auto)</option>
+                        </select>
+                        <button id="stitchBtn" class="btn btn-success">Stitch Images</button>
+                        <button id="clearBtn" class="btn btn-danger">Clear All</button>
+                        <span class="counter">Images: <span id="imageCount">0</span></span>
+                    </div>
             </div>
             
             <div class="metrics-section">
