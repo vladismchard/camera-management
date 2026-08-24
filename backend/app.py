@@ -75,12 +75,16 @@ def stitch():
         logger.warning(f"Not enough images: {count}")
         return jsonify({'error': f'Need at least 2 images, have {count}'}), 400
     
-    stitched, result = stitcher.stitch()
+    method = request.args.get('method', 'horizontal')
+    logger.info(f"Using stitching method: {method}")
+    
+    stitched, result = stitcher.stitch(method=method)
     if stitched is not None:
         return jsonify({
             'status': 'success',
             'filepath': result,
-            'count': count
+            'count': count,
+            'method': method
         })
     return jsonify({'error': result}), 500
 
