@@ -1,4 +1,4 @@
-// frontend/app.js
+/ frontend/app.js
 class WeldingFocusDetectionUI {
     constructor() {
         this.apiUrl = window.location.protocol + '//' + window.location.hostname + ':5000';
@@ -13,9 +13,15 @@ class WeldingFocusDetectionUI {
             stream: document.getElementById('stream'),
             captureBtn: document.getElementById('captureBtn'),
             stitchBtn: document.getElementById('stitchBtn'),
+            stitchMethod: document.getElementById('stitchMethod'),
             clearBtn: document.getElementById('clearBtn'),
             imageCount: document.getElementById('imageCount'),
-            stitchedResult: document.getElementById('stitchedResult')
+            stitchedResult: document.getElementById('stitchedResult'),
+            autofocusBtn: document.getElementById('autofocusBtn'),
+            numSteps: document.getElementById('numSteps'),
+            stepSize: document.getElementById('stepSize'),
+            autofocusResults: document.getElementById('autofocusResults'),
+            autofocusImage: document.getElementById('autofocusImage')
         };
         this.chartCtx = this.elements.chart.getContext('2d');
         this.elements.stream.src = `${this.apiUrl}/stream`;
@@ -29,6 +35,7 @@ class WeldingFocusDetectionUI {
         this.elements.captureBtn.addEventListener('click', () => this.captureImage());
         this.elements.stitchBtn.addEventListener('click', () => this.stitchImages());
         this.elements.clearBtn.addEventListener('click', () => this.clearImages());
+        this.elements.autofocusBtn.addEventListener('click', () => this.runAutofocus());
     }
 
     initMetricsPolling() {
@@ -67,19 +74,121 @@ class WeldingFocusDetectionUI {
         }
     }
 
+    async runAutofocus() {
+        this.elements.autofocusBtn.disabled = true;
+        this.elements.autofocusBtn.textContent = 'Running...';
+        
+        const numSteps = parseInt(this.elements.numSteps.value);
+        const stepSize = parseInt(this.elements.stepSize.value);
+        
+        console.log(`Running autofocus: steps=${numSteps}, step_size=${stepSize}`);
+        
+        // Очищаем предыдущие результаты
+        this.elements.autofocusResults.innerHTML = '<p class="message-info">Starting autofocus...</p>';
+        this.elements.autofocusImage.innerHTML = '';
+        
+        try {
+            const response = await fetch(`${this.apiUrl}/autofocus`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    num_steps: numSteps,
+                    step_size: stepSize
+                })
+            });
+            
+            const data = await response.json();
+            console.log('Autofocus response:', data);
+            
+            if (data.status === 'success') {
+                this.displayAutofocusResults(data);
+                this.loadBestFrame();
+            } else {
+                this.elements.autofocusResults.innerHTML = `
+                    <p class="message" style="color: #ef4444;">Error: ${data.error}</p>
+                `;
+            }
+        } catch (error) {
+            console.error('Autofocus failed:', error);
+            this.elements.autofocusResults.innerHTML = `
+                <p class="message" style="color: #ef4444;">Failed to run autofocus</p>
+            `;
+        } finally {
+            this.elements.autofocusBtn.disabled = false;
+            this.elements.autofocusBtn.textContent = 'Run Autofocus';
+        }
+    }
+
+    displayAutofocusResults(data) {
+        const { results, best, total_steps } = data;
+        
+        let html = `<p class="message-info">Completed ${total_steps} steps</p>`;
+        
+        results.forEach((result) => {
+            const isBest = result.step === best.step;
+            const cssClass = isBest ? 'af-result-item best' : 'af-result-item';
+            
+            html += `
+                <div class="${cssClass}">
+                    <div class="step-info">
+                        <span>Step ${result.step}: Z ${result.z_offset >= 0 ? '+' : ''}${result.z_offset}</span>
+                        <span>${result.is_focused ? '✓ FOCUSED' : '✗ BLURRED'}</span>
+                    </div>
+                    <div class="variance-info">
+                        Position: Z=${result.z_position >= 0 ? '+' : ''}${result.z_position} | 
+                        Variance: ${result.variance.toFixed(2)}
+                        ${isBest ? ' | 🌟 BEST' : ''}
+                    </div>
+                </div>
+            `;
+        });
+        
+        html += `
+            <div style="margin-top: 15px; padding: 12px; background: #dcfce7; border-radius: 8px; border-left: 4px solid #10b981;">
+                <strong>Best Focus Position:</strong><br>
+                Z = ${best.z_offset >= 0 ? '+' : ''}${best.z_offset} 
+                (absolute: ${best.z_position >= 0 ? '+' : ''}${best.z_position})<br>
+                Variance: ${best.variance.toFixed(2)}
+            </div>
+        `;
+        
+        this.elements.autofocusResults.innerHTML = html;
+    }
+
+    async loadBestFrame() {
+        try {
+            const timestamp = new Date().getTime();
+            this.elements.autofocusImage.innerHTML = `
+                <img src="${this.apiUrl}/autofocus/best-frame?t=${timestamp}" alt="Best Focus Frame">
+                <p style="text-align: center; margin-top: 10px; color: #10b981; font-weight: 600;">
+                    Best focused image
+                </p>
+            `;
+        } catch (error) {
+            console.error('Failed to load best frame:', error);
+        }
+    }
+
     async stitchImages() {
         this.elements.stitchBtn.disabled = true;
         this.elements.stitchBtn.textContent = 'Stitching...';
         
+        const method = this.elements.stitchMethod.value;
+        console.log(`Stitching with method: ${method}`);
+        
         try {
-            const response = await fetch(`${this.apiUrl}/stitch`, { method: 'POST' });
+            const response = await fetch(`${this.apiUrl}/stitch?method=${method}`, { method: 'POST' });
             const data = await response.json();
             
             if (data.status === 'success') {
                 const filename = data.filepath.split('/').pop();
                 this.elements.stitchedResult.innerHTML = `
                     <img src="${this.apiUrl}/stitched/${filename}?t=${Date.now()}" alt="Stitched Result">
-                    <p style="margin-top: 10px; color: #10b981; font-weight: 600;">Successfully stitched ${data.count} images</p>
+                    <p style="margin-top: 10px; color: #10b981; font-weight: 600;">
+                        Successfully stitched ${data.count} images using ${data.method} method
+                    </p>
                 `;
             } else {
                 this.elements.stitchedResult.innerHTML = `
