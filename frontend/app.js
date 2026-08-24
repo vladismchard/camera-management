@@ -1,4 +1,4 @@
-/ frontend/app.js
+// frontend/app.js
 class WeldingFocusDetectionUI {
     constructor() {
         this.apiUrl = window.location.protocol + '//' + window.location.hostname + ':5000';
