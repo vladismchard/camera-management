@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Welding Focus Detector</title>
-    <link rel="stylesheet" href="style.css?v=3">
+    <link rel="stylesheet" href="style.css?v=4">
 </head>
 <body>
     <div class="container">
@@ -16,18 +16,30 @@
         <main>
             <div class="video-section">
                 <img id="stream" alt="Camera Stream">
-                    <div class="controls">
-                        <button id="captureBtn" class="btn btn-primary">Capture Image</button>
-                        <select id="stitchMethod" class="select">
-                            <option value="horizontal">Horizontal</option>
-                            <option value="vertical">Vertical</option>
-                            <option value="grid">Grid</option>
-                            <option value="panorama">Panorama (auto)</option>
-                        </select>
-                        <button id="stitchBtn" class="btn btn-success">Stitch Images</button>
-                        <button id="clearBtn" class="btn btn-danger">Clear All</button>
-                        <span class="counter">Images: <span id="imageCount">0</span></span>
+                
+                <div class="autofocus-controls">
+                    <h3>Autofocus</h3>
+                    <div class="input-group">
+                        <label for="numSteps">Steps:</label>
+                        <input type="number" id="numSteps" value="3" min="2" max="10">
+                        <label for="stepSize">Step Size:</label>
+                        <input type="number" id="stepSize" value="1" min="1" max="5">
                     </div>
+                    <button id="autofocusBtn" class="btn btn-info">Run Autofocus</button>
+                </div>
+                
+                <div class="controls">
+                    <button id="captureBtn" class="btn btn-primary">Capture Image</button>
+                    <select id="stitchMethod" class="select">
+                        <option value="horizontal">Horizontal</option>
+                        <option value="vertical">Vertical</option>
+                        <option value="grid">Grid</option>
+                        <option value="panorama">Panorama (auto)</option>
+                    </select>
+                    <button id="stitchBtn" class="btn btn-success">Stitch Images</button>
+                    <button id="clearBtn" class="btn btn-danger">Clear All</button>
+                    <span class="counter">Images: <span id="imageCount">0</span></span>
+                </div>
             </div>
             
             <div class="metrics-section">
@@ -62,6 +74,12 @@
                     <canvas id="chart"></canvas>
                 </div>
                 
+                <div class="autofocus-card">
+                    <h2>Autofocus Results</h2>
+                    <div id="autofocusResults"></div>
+                    <div id="autofocusImage"></div>
+                </div>
+                
                 <div class="stitched-card">
                     <h2>Stitched Result</h2>
                     <div id="stitchedResult"></div>
@@ -70,6 +88,6 @@
         </main>
     </div>
     
-    <script src="app.js?v=3"></script>
+    <script src="app.js?v=4"></script>
 </body>
 </html>

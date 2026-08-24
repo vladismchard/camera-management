@@ -4,6 +4,7 @@ from flask_cors import CORS
 from camera import Camera
 from focus_detector import FocusDetector
 from image_stitcher import ImageStitcher
+from autofocus import AutoFocus
 import logging
 import cv2
 import os
@@ -18,12 +19,14 @@ try:
     camera = Camera()
     detector = FocusDetector()
     stitcher = ImageStitcher()
-    logger.info("Camera, detector and stitcher initialized successfully")
+    autofocus = AutoFocus(camera, detector)
+    logger.info("All components initialized successfully")
 except Exception as e:
     logger.error(f"Failed to initialize: {e}")
     camera = None
     detector = None
     stitcher = None
+    autofocus = None
 
 @app.route('/stream')
 def stream():
@@ -65,6 +68,56 @@ def capture():
     except Exception as e:
         logger.error(f"Error in capture: {e}", exc_info=True)
         return jsonify({'error': str(e)}), 500
+
+@app.route('/autofocus', methods=['POST'])
+def run_autofocus():
+    logger.info("Autofocus endpoint called")
+    
+    if autofocus is None:
+        return jsonify({'error': 'Autofocus not available'}), 503
+    
+    try:
+        data = request.get_json() or {}
+        num_steps = int(data.get('num_steps', 3))
+        step_size = int(data.get('step_size', 1))
+        
+        logger.info(f"Running autofocus with {num_steps} steps, step_size={step_size}")
+        
+        # Очищаем предыдущие результаты
+        autofocus.clear()
+        
+        # Запускаем серию захвата
+        best = autofocus.capture_series(num_steps, step_size)
+        
+        if best is None:
+            return jsonify({'error': 'Autofocus failed'}), 500
+        
+        # Получаем все результаты
+        results = autofocus.get_results()
+        best_info = autofocus.get_best_result()
+        
+        return jsonify({
+            'status': 'success',
+            'results': results,
+            'best': best_info,
+            'total_steps': len(results)
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in autofocus: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/autofocus/best-frame')
+def get_best_frame():
+    if autofocus is None:
+        return jsonify({'error': 'Autofocus not available'}), 503
+    
+    frame = autofocus.get_best_frame()
+    if frame is None:
+        return jsonify({'error': 'No autofocus results available'}), 404
+    
+    _, buffer = camera.encode_frame(frame)
+    return Response(buffer.tobytes(), mimetype='image/jpeg')
 
 @app.route('/stitch', methods=['POST'])
 def stitch():
@@ -113,6 +166,7 @@ def health():
         'camera': camera is not None,
         'detector': detector is not None,
         'stitcher': stitcher is not None,
+        'autofocus': autofocus is not None,
         'image_count': stitcher.get_count() if stitcher else 0
     })
 
