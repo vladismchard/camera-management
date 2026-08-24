@@ -51,4 +51,4 @@ class FocusDetector:
             'history': history_list,
             'avg_variance': float(np.mean(self.history)) if self.history else 0.0,
             'history_size': int(len(self.history))
-        }
+        } 
