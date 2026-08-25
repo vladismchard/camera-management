@@ -8,11 +8,27 @@ from autofocus import AutoFocus
 import logging
 import cv2
 import os
+import json
+import numpy as np
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Кастомный encoder — конвертирует все numpy типы в Python native
+class NumpyEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        if isinstance(obj, np.floating):
+            return float(obj)
+        if isinstance(obj, np.bool_):
+            return bool(obj)
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return super().default(obj)
+
 app = Flask(__name__)
+app.json_encoder = NumpyEncoder
 CORS(app)
 
 try:
@@ -54,7 +70,6 @@ def capture():
         if frame is None:
             return jsonify({'error': 'Failed to capture frame'}), 500
 
-        # Проверяем фокус перед добавлением
         focus_info = detector.check_focus(frame)
 
         if not focus_info['is_focused']:
@@ -62,8 +77,8 @@ def capture():
             return jsonify({
                 'status': 'skipped',
                 'reason': 'not_focused',
-                'variance': focus_info['variance'],
-                'threshold': focus_info['adaptive_threshold'],
+                'variance': float(focus_info['variance']),
+                'threshold': float(focus_info['adaptive_threshold']),
                 'count': stitcher.get_count()
             })
 
@@ -74,7 +89,7 @@ def capture():
         return jsonify({
             'status': 'success',
             'count': count,
-            'variance': focus_info['variance']
+            'variance': float(focus_info['variance'])
         })
 
     except Exception as e:
@@ -105,7 +120,7 @@ def run_autofocus():
             'status': 'success',
             'results': results,
             'best': best_info,
-            'total_steps': len(results)
+            'total_steps': int(len(results))
         })
 
     except Exception as e:
@@ -114,7 +129,6 @@ def run_autofocus():
 
 @app.route('/autofocus/frame/<int:step>')
 def get_autofocus_frame(step):
-    """Возвращает кадр конкретного шага автофокуса"""
     if autofocus is None:
         return jsonify({'error': 'Autofocus not available'}), 503
 
