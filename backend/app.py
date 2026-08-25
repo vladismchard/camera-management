@@ -47,24 +47,36 @@ def metrics():
 def capture():
     logger.info("Capture endpoint called")
     if camera is None:
-        logger.error("Camera not available")
         return jsonify({'error': 'Camera not available'}), 503
-    
+
     try:
         frame = camera.capture_single()
-        logger.info(f"Frame captured: {frame is not None}, shape: {frame.shape if frame is not None else 'None'}")
-        
-        if frame is not None:
-            stitcher.add_image(frame)
-            count = stitcher.get_count()
-            logger.info(f"Image added to stitcher, total count: {count}")
-            return jsonify({
-                'status': 'success',
-                'count': count
-            })
-        else:
-            logger.error("Failed to capture frame")
+        if frame is None:
             return jsonify({'error': 'Failed to capture frame'}), 500
+
+        # Проверяем фокус перед добавлением
+        focus_info = detector.check_focus(frame)
+
+        if not focus_info['is_focused']:
+            logger.info(f"Frame skipped — not focused, variance={focus_info['variance']:.2f}")
+            return jsonify({
+                'status': 'skipped',
+                'reason': 'not_focused',
+                'variance': focus_info['variance'],
+                'threshold': focus_info['adaptive_threshold'],
+                'count': stitcher.get_count()
+            })
+
+        stitcher.add_image(frame)
+        count = stitcher.get_count()
+        logger.info(f"Frame added, count={count}, variance={focus_info['variance']:.2f}")
+
+        return jsonify({
+            'status': 'success',
+            'count': count,
+            'variance': focus_info['variance']
+        })
+
     except Exception as e:
         logger.error(f"Error in capture: {e}", exc_info=True)
         return jsonify({'error': str(e)}), 500
@@ -72,66 +84,68 @@ def capture():
 @app.route('/autofocus', methods=['POST'])
 def run_autofocus():
     logger.info("Autofocus endpoint called")
-    
     if autofocus is None:
         return jsonify({'error': 'Autofocus not available'}), 503
-    
+
     try:
         data = request.get_json() or {}
         num_steps = int(data.get('num_steps', 3))
         step_size = int(data.get('step_size', 1))
-        
-        logger.info(f"Running autofocus with {num_steps} steps, step_size={step_size}")
-        
-        # Очищаем предыдущие результаты
+
         autofocus.clear()
-        
-        # Запускаем серию захвата
         best = autofocus.capture_series(num_steps, step_size)
-        
+
         if best is None:
             return jsonify({'error': 'Autofocus failed'}), 500
-        
-        # Получаем все результаты
+
         results = autofocus.get_results()
         best_info = autofocus.get_best_result()
-        
+
         return jsonify({
             'status': 'success',
             'results': results,
             'best': best_info,
             'total_steps': len(results)
         })
-        
+
     except Exception as e:
         logger.error(f"Error in autofocus: {e}", exc_info=True)
         return jsonify({'error': str(e)}), 500
+
+@app.route('/autofocus/frame/<int:step>')
+def get_autofocus_frame(step):
+    """Возвращает кадр конкретного шага автофокуса"""
+    if autofocus is None:
+        return jsonify({'error': 'Autofocus not available'}), 503
+
+    frame = autofocus.get_frame_by_step(step)
+    if frame is None:
+        return jsonify({'error': f'No frame for step {step}'}), 404
+
+    _, buffer = camera.encode_frame(frame)
+    return Response(buffer.tobytes(), mimetype='image/jpeg')
 
 @app.route('/autofocus/best-frame')
 def get_best_frame():
     if autofocus is None:
         return jsonify({'error': 'Autofocus not available'}), 503
-    
+
     frame = autofocus.get_best_frame()
     if frame is None:
         return jsonify({'error': 'No autofocus results available'}), 404
-    
+
     _, buffer = camera.encode_frame(frame)
     return Response(buffer.tobytes(), mimetype='image/jpeg')
 
 @app.route('/stitch', methods=['POST'])
 def stitch():
     count = stitcher.get_count()
-    logger.info(f"Stitch endpoint called with {count} images")
-    
     if count < 2:
-        logger.warning(f"Not enough images: {count}")
         return jsonify({'error': f'Need at least 2 images, have {count}'}), 400
-    
+
     method = request.args.get('method', 'horizontal')
-    logger.info(f"Using stitching method: {method}")
-    
     stitched, result = stitcher.stitch(method=method)
+
     if stitched is not None:
         return jsonify({
             'status': 'success',
@@ -143,14 +157,12 @@ def stitch():
 
 @app.route('/clear', methods=['POST'])
 def clear():
-    logger.info("Clear endpoint called")
     stitcher.clear()
     return jsonify({'status': 'success', 'count': 0})
 
 @app.route('/count')
 def count():
-    count = stitcher.get_count()
-    return jsonify({'count': count})
+    return jsonify({'count': stitcher.get_count()})
 
 @app.route('/stitched/<filename>')
 def get_stitched(filename):

@@ -10,6 +10,7 @@ class StitchUI {
             clearBtn: document.getElementById('clearBtn'),
             imageCount: document.getElementById('imageCount'),
             stitchedResult: document.getElementById('stitchedResult'),
+            captureLog: document.getElementById('captureLog'),
         };
         this.elements.stream.src = `${this.apiUrl}/stream`;
         this.elements.captureBtn.addEventListener('click', () => this.captureImage());
@@ -18,18 +19,41 @@ class StitchUI {
         this.updateImageCount();
     }
 
+    logCapture(message, type = 'info') {
+        const log = this.elements.captureLog;
+        const item = document.createElement('div');
+        item.className = `log-item log-${type}`;
+        item.textContent = `${new Date().toLocaleTimeString()} — ${message}`;
+        log.prepend(item);
+
+        // Оставляем только последние 20 записей
+        while (log.children.length > 20) {
+            log.removeChild(log.lastChild);
+        }
+    }
+
     async captureImage() {
         try {
             const response = await fetch(`${this.apiUrl}/capture`, { method: 'POST' });
             const data = await response.json();
+
             if (data.status === 'success') {
                 this.elements.imageCount.textContent = data.count;
                 this.elements.stitchBtn.disabled = data.count < 2;
+                this.logCapture(
+                    `Image captured ✓  Variance: ${data.variance.toFixed(2)}`,
+                    'success'
+                );
+            } else if (data.status === 'skipped') {
+                this.logCapture(
+                    `Frame skipped — not focused. Variance: ${data.variance.toFixed(2)}, Threshold: ${data.threshold.toFixed(2)}`,
+                    'warning'
+                );
             } else {
-                alert(`Failed to capture: ${data.error}`);
+                this.logCapture(`Error: ${data.error}`, 'error');
             }
         } catch (error) {
-            alert('Failed to capture image: ' + error.message);
+            this.logCapture('Failed to capture: ' + error.message, 'error');
         }
     }
 
@@ -46,9 +70,7 @@ class StitchUI {
                 const filename = data.filepath.split('/').pop();
                 this.elements.stitchedResult.innerHTML = `
                     <img src="${this.apiUrl}/stitched/${filename}?t=${Date.now()}" alt="Stitched Result">
-                    <p class="success-label">
-                        Stitched ${data.count} images using ${data.method} method
-                    </p>
+                    <p class="success-label">Stitched ${data.count} images — ${data.method}</p>
                 `;
             } else {
                 this.elements.stitchedResult.innerHTML =
@@ -70,10 +92,12 @@ class StitchUI {
             if (data.status === 'success') {
                 this.elements.imageCount.textContent = data.count;
                 this.elements.stitchBtn.disabled = true;
-                this.elements.stitchedResult.innerHTML = '<p class="message-empty">Cleared all images</p>';
+                this.elements.stitchedResult.innerHTML =
+                    '<p class="message-empty">Cleared all images</p>';
+                this.logCapture('All images cleared', 'info');
             }
         } catch (error) {
-            console.error('Failed to clear images:', error);
+            console.error('Failed to clear:', error);
         }
     }
 

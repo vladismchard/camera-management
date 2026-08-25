@@ -7,16 +7,19 @@ class AutofocusUI {
             numSteps: document.getElementById('numSteps'),
             stepSize: document.getElementById('stepSize'),
             autofocusResults: document.getElementById('autofocusResults'),
-            autofocusImage: document.getElementById('autofocusImage'),
+            framesGrid: document.getElementById('framesGrid'),
         };
         this.elements.autofocusBtn.addEventListener('click', () => this.runAutofocus());
+        this.bestStep = null;
     }
 
     async runAutofocus() {
         this.elements.autofocusBtn.disabled = true;
         this.elements.autofocusBtn.textContent = 'Running...';
-        this.elements.autofocusResults.innerHTML = '<p class="message-info">Starting autofocus...</p>';
-        this.elements.autofocusImage.innerHTML = '';
+        this.elements.autofocusResults.innerHTML =
+            '<p class="message-info">Running autofocus series...</p>';
+        this.elements.framesGrid.innerHTML = '';
+        this.bestStep = null;
 
         const numSteps = parseInt(this.elements.numSteps.value);
         const stepSize = parseInt(this.elements.stepSize.value);
@@ -30,8 +33,9 @@ class AutofocusUI {
             const data = await response.json();
 
             if (data.status === 'success') {
+                this.bestStep = data.best.step;
                 this.displayResults(data);
-                this.loadBestFrame();
+                this.displayFrames(data.results);
             } else {
                 this.elements.autofocusResults.innerHTML =
                     `<p class="message-error">Error: ${data.error}</p>`;
@@ -58,8 +62,9 @@ class AutofocusUI {
                         <span>${result.is_focused ? '✓ FOCUSED' : '✗ BLURRED'}</span>
                     </div>
                     <div class="variance-info">
-                        Position: Z=${result.z_position >= 0 ? '+' : ''}${result.z_position} |
-                        Variance: ${result.variance.toFixed(2)}
+                        Z=${result.z_position >= 0 ? '+' : ''}${result.z_position} |
+                        Variance: ${result.variance.toFixed(2)} |
+                        Threshold: ${result.adaptive_threshold.toFixed(2)}
                         ${isBest ? ' | 🌟 BEST' : ''}
                     </div>
                 </div>
@@ -68,9 +73,9 @@ class AutofocusUI {
 
         html += `
             <div class="best-summary">
-                <strong>Best Focus Position:</strong><br>
+                <strong>Best Focus:</strong>
                 Z = ${best.z_offset >= 0 ? '+' : ''}${best.z_offset}
-                (absolute: ${best.z_position >= 0 ? '+' : ''}${best.z_position})<br>
+                (abs: ${best.z_position >= 0 ? '+' : ''}${best.z_position}) |
                 Variance: ${best.variance.toFixed(2)}
             </div>
         `;
@@ -78,12 +83,34 @@ class AutofocusUI {
         this.elements.autofocusResults.innerHTML = html;
     }
 
-    loadBestFrame() {
-        const timestamp = Date.now();
-        this.elements.autofocusImage.innerHTML = `
-            <img src="${this.apiUrl}/autofocus/best-frame?t=${timestamp}" alt="Best Focus Frame">
-            <p class="best-frame-label">Best focused image</p>
-        `;
+    displayFrames(results) {
+        const grid = this.elements.framesGrid;
+        grid.innerHTML = '';
+
+        results.forEach((result) => {
+            const isBest = result.step === this.bestStep;
+            const timestamp = Date.now();
+
+            const card = document.createElement('div');
+            card.className = `frame-card ${isBest ? 'frame-best' : ''}`;
+
+            card.innerHTML = `
+                ${isBest ? '<div class="frame-best-badge">🌟 BEST</div>' : ''}
+                <img
+                    src="${this.apiUrl}/autofocus/frame/${result.step}?t=${timestamp}"
+                    alt="Step ${result.step}"
+                    loading="lazy"
+                >
+                <div class="frame-info">
+                    <div class="frame-step">Step ${result.step} — Z ${result.z_offset >= 0 ? '+' : ''}${result.z_offset}</div>
+                    <div class="frame-variance ${result.is_focused ? 'focused' : 'blurred'}">
+                        ${result.is_focused ? '✓' : '✗'} ${result.variance.toFixed(2)}
+                    </div>
+                </div>
+            `;
+
+            grid.appendChild(card);
+        });
     }
 }
 

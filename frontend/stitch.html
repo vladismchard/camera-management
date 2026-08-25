@@ -21,7 +21,7 @@
         <main class="stitch-main">
             <div class="stitch-controls-section">
                 <div class="card">
-                    <h2>Capture & Stitch</h2>
+                    <h2>Capture</h2>
                     <div class="stitch-preview">
                         <img id="stream" alt="Camera Stream">
                     </div>
@@ -38,13 +38,18 @@
                         <span class="counter">Images: <span id="imageCount">0</span></span>
                     </div>
                 </div>
+
+                <div class="card">
+                    <h2>Capture Log</h2>
+                    <div id="captureLog" class="capture-log"></div>
+                </div>
             </div>
 
             <div class="stitch-result-section">
                 <div class="card">
                     <h2>Stitched Result</h2>
                     <div id="stitchedResult">
-                        <p class="message-empty">Capture at least 2 images and stitch</p>
+                        <p class="message-empty">Capture at least 2 focused images and stitch</p>
                     </div>
                 </div>
             </div>
