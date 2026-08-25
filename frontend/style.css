@@ -17,6 +17,7 @@ body {
     margin: 0 auto;
 }
 
+/* ── Header & Nav ── */
 header {
     text-align: center;
     color: white;
@@ -24,15 +25,104 @@ header {
 }
 
 header h1 {
-    font-size: 2.5em;
+    font-size: 2.2em;
     font-weight: 700;
     text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+    margin-bottom: 15px;
 }
 
-main {
+.navbar {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.nav-link {
+    padding: 10px 28px;
+    border-radius: 25px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 15px;
+    color: rgba(255,255,255,0.8);
+    background: rgba(255,255,255,0.15);
+    transition: all 0.3s ease;
+}
+
+.nav-link:hover {
+    background: rgba(255,255,255,0.3);
+    color: white;
+}
+
+.nav-link.active {
+    background: white;
+    color: #667eea;
+}
+
+/* ── Card ── */
+.card {
+    background: white;
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+.card h2 {
+    margin-bottom: 15px;
+    color: #1f2937;
+    font-size: 1.2em;
+}
+
+/* ── Buttons ── */
+.btn {
+    padding: 11px 22px;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+}
+
+.btn-primary { background: #3b82f6; color: white; }
+.btn-primary:hover:not(:disabled) { background: #2563eb; }
+
+.btn-success { background: #10b981; color: white; }
+.btn-success:hover:not(:disabled) { background: #059669; }
+
+.btn-danger { background: #ef4444; color: white; }
+.btn-danger:hover:not(:disabled) { background: #dc2626; }
+
+.btn-info { background: #06b6d4; color: white; }
+.btn-info:hover:not(:disabled) { background: #0891b2; }
+
+/* ── Select ── */
+.select {
+    padding: 11px 16px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    background: white;
+    cursor: pointer;
+    transition: border-color 0.3s;
+}
+
+.select:hover, .select:focus {
+    border-color: #3b82f6;
+    outline: none;
+}
+
+/* ── Stream page ── */
+.stream-main {
     display: grid;
     grid-template-columns: 2fr 1fr;
     gap: 20px;
+    align-items: start;
 }
 
 .video-section {
@@ -47,67 +137,6 @@ main {
     height: auto;
     border-radius: 10px;
     display: block;
-    margin-bottom: 15px;
-}
-
-.controls {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    flex-wrap: wrap;
-}
-
-.btn {
-    padding: 12px 24px;
-    border: none;
-    border-radius: 8px;
-    font-size: 16px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.btn-primary {
-    background: #3b82f6;
-    color: white;
-}
-
-.btn-primary:hover {
-    background: #2563eb;
-}
-
-.btn-success {
-    background: #10b981;
-    color: white;
-}
-
-.btn-success:hover {
-    background: #059669;
-}
-
-.btn-success:disabled {
-    background: #6b7280;
-    cursor: not-allowed;
-}
-
-.btn-danger {
-    background: #ef4444;
-    color: white;
-}
-
-.btn-danger:hover {
-    background: #dc2626;
-}
-
-.counter {
-    margin-left: auto;
-    font-weight: 600;
-    color: #1f2937;
-    font-size: 18px;
-}
-
-.counter span {
-    color: #3b82f6;
 }
 
 .metrics-section {
@@ -116,26 +145,12 @@ main {
     gap: 20px;
 }
 
-.status-card, .metrics-card, .chart-card, .stitched-card {
-    background: white;
-    border-radius: 15px;
-    padding: 20px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-}
-
-.status-card h2, .metrics-card h2, .chart-card h2, .stitched-card h2 {
-    margin-bottom: 15px;
-    color: #333;
-    font-size: 1.3em;
-}
-
 .status-indicator {
     width: 60px;
     height: 60px;
     border-radius: 50%;
     margin: 15px auto;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
 }
 
 .status-indicator.focused {
@@ -150,9 +165,9 @@ main {
 
 .status-text {
     text-align: center;
-    font-size: 1.5em;
-    font-weight: 600;
-    color: #333;
+    font-size: 1.4em;
+    font-weight: 700;
+    color: #1f2937;
 }
 
 .metric {
@@ -162,91 +177,30 @@ main {
     border-bottom: 1px solid #e5e7eb;
 }
 
-.metric:last-child {
-    border-bottom: none;
+.metric:last-child { border-bottom: none; }
+
+.metric-label { color: #6b7280; font-weight: 500; }
+.metric-value { color: #1f2937; font-weight: 700; }
+
+/* ── Autofocus page ── */
+.autofocus-main {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    align-items: start;
 }
 
-.metric-label {
-    color: #6b7280;
-    font-weight: 500;
-}
-
-.metric-value {
-    color: #1f2937;
-    font-weight: 700;
-}
-
-.chart-card canvas {
-    width: 100%;
-    height: 200px;
-}
-
-.stitched-card {
-    max-height: 400px;
-    overflow: auto;
-}
-
-#stitchedResult {
-    text-align: center;
-    color: #6b7280;
-}
-
-#stitchedResult img {
-    width: 100%;
-    border-radius: 8px;
-    margin-top: 10px;
-}
-
-#stitchedResult .message {
-    padding: 20px;
-}
-
-@media (max-width: 968px) {
-    main {
-        grid-template-columns: 1fr;
-    }
-}
-
-.select {
-    padding: 12px 16px;
-    border: 2px solid #e5e7eb;
-    border-radius: 8px;
-    font-size: 16px;
-    font-weight: 600;
-    background: white;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.select:hover {
-    border-color: #3b82f6;
-}
-
-.select:focus {
-    outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-/* frontend/style.css - добавьте эти стили */
-.autofocus-controls {
-    background: #f3f4f6;
-    border-radius: 10px;
-    padding: 15px;
-    margin-bottom: 15px;
-}
-
-.autofocus-controls h3 {
-    margin: 0 0 10px 0;
-    color: #1f2937;
-    font-size: 1.1em;
+.af-controls-section {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
 }
 
 .input-group {
     display: flex;
-    gap: 10px;
+    gap: 12px;
     align-items: center;
-    margin-bottom: 10px;
+    margin-bottom: 15px;
 }
 
 .input-group label {
@@ -255,57 +209,24 @@ main {
 }
 
 .input-group input {
-    padding: 8px;
+    padding: 8px 10px;
     border: 2px solid #e5e7eb;
     border-radius: 6px;
     width: 70px;
-    font-size: 16px;
+    font-size: 15px;
 }
 
 .input-group input:focus {
     outline: none;
-    border-color: #3b82f6;
-}
-
-.btn-info {
-    background: #06b6d4;
-    color: white;
-}
-
-.btn-info:hover {
-    background: #0891b2;
-}
-
-.btn-info:disabled {
-    background: #6b7280;
-    cursor: not-allowed;
-}
-
-.autofocus-card {
-    background: white;
-    border-radius: 15px;
-    padding: 20px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-    max-height: 500px;
-    overflow: auto;
-}
-
-.autofocus-card h2 {
-    margin-bottom: 15px;
-    color: #333;
-    font-size: 1.3em;
-}
-
-#autofocusResults {
-    margin-bottom: 15px;
+    border-color: #06b6d4;
 }
 
 .af-result-item {
-    padding: 10px;
+    padding: 10px 12px;
     margin-bottom: 8px;
     border-radius: 8px;
     background: #f3f4f6;
-    border-left: 4px solid #6b7280;
+    border-left: 4px solid #9ca3af;
 }
 
 .af-result-item.best {
@@ -313,30 +234,122 @@ main {
     border-left-color: #10b981;
 }
 
-.af-result-item .step-info {
+.step-info {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 5px;
     font-weight: 600;
+    margin-bottom: 4px;
+    color: #1f2937;
 }
 
-.af-result-item .variance-info {
+.variance-info {
     color: #6b7280;
-    font-size: 0.9em;
+    font-size: 0.88em;
+}
+
+.best-summary {
+    margin-top: 12px;
+    padding: 12px;
+    background: #dcfce7;
+    border-radius: 8px;
+    border-left: 4px solid #10b981;
+    font-size: 0.95em;
+    line-height: 1.6;
 }
 
 #autofocusImage img {
+    width: 100%;
+    border-radius: 10px;
+    margin-top: 10px;
+}
+
+.best-frame-label {
+    text-align: center;
+    margin-top: 10px;
+    color: #10b981;
+    font-weight: 600;
+}
+
+/* ── Stitch page ── */
+.stitch-main {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    align-items: start;
+}
+
+.stitch-preview {
+    margin-bottom: 15px;
+}
+
+.stitch-preview img {
+    width: 100%;
+    height: auto;
+    border-radius: 10px;
+    display: block;
+}
+
+.controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.counter {
+    margin-left: auto;
+    font-weight: 600;
+    color: #1f2937;
+    font-size: 16px;
+}
+
+.counter span { color: #3b82f6; }
+
+#stitchedResult img {
     width: 100%;
     border-radius: 8px;
     margin-top: 10px;
 }
 
+.success-label {
+    text-align: center;
+    margin-top: 10px;
+    color: #10b981;
+    font-weight: 600;
+}
+
+/* ── Messages ── */
+.message-empty {
+    padding: 20px;
+    text-align: center;
+    color: #9ca3af;
+    font-style: italic;
+}
+
 .message-info {
-    padding: 10px;
+    padding: 10px 12px;
     background: #dbeafe;
     border-left: 4px solid #3b82f6;
     border-radius: 6px;
     margin: 5px 0;
     color: #1e40af;
     font-weight: 500;
+}
+
+.message-error {
+    padding: 10px 12px;
+    background: #fee2e2;
+    border-left: 4px solid #ef4444;
+    border-radius: 6px;
+    color: #b91c1c;
+    font-weight: 500;
+}
+
+/* ── Responsive ── */
+@media (max-width: 968px) {
+    .stream-main,
+    .autofocus-main,
+    .stitch-main {
+        grid-template-columns: 1fr;
+    }
 }

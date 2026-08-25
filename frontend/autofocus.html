@@ -1,0 +1,55 @@
+<!-- frontend/autofocus.html -->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welding Focus Detector — Autofocus</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Welding Focus Detection</h1>
+            <nav class="navbar">
+                <a href="index.html" class="nav-link">Stream</a>
+                <a href="autofocus.html" class="nav-link active">Autofocus</a>
+                <a href="stitch.html" class="nav-link">Stitch</a>
+            </nav>
+        </header>
+
+        <main class="autofocus-main">
+            <div class="af-controls-section">
+                <div class="card">
+                    <h2>Autofocus Controls</h2>
+                    <div class="input-group">
+                        <label for="numSteps">Steps:</label>
+                        <input type="number" id="numSteps" value="3" min="2" max="10">
+                        <label for="stepSize">Step Size:</label>
+                        <input type="number" id="stepSize" value="1" min="1" max="5">
+                    </div>
+                    <button id="autofocusBtn" class="btn btn-info">Run Autofocus</button>
+                </div>
+
+                <div class="card">
+                    <h2>Autofocus Results</h2>
+                    <div id="autofocusResults">
+                        <p class="message-empty">Run autofocus to see results</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="af-image-section">
+                <div class="card">
+                    <h2>Best Focus Frame</h2>
+                    <div id="autofocusImage">
+                        <p class="message-empty">No image yet</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="autofocus.js"></script>
+</body>
+</html>

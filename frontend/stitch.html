@@ -1,0 +1,56 @@
+<!-- frontend/stitch.html -->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welding Focus Detector — Stitch</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Welding Focus Detection</h1>
+            <nav class="navbar">
+                <a href="index.html" class="nav-link">Stream</a>
+                <a href="autofocus.html" class="nav-link">Autofocus</a>
+                <a href="stitch.html" class="nav-link active">Stitch</a>
+            </nav>
+        </header>
+
+        <main class="stitch-main">
+            <div class="stitch-controls-section">
+                <div class="card">
+                    <h2>Capture & Stitch</h2>
+                    <div class="stitch-preview">
+                        <img id="stream" alt="Camera Stream">
+                    </div>
+                    <div class="controls">
+                        <button id="captureBtn" class="btn btn-primary">Capture Image</button>
+                        <select id="stitchMethod" class="select">
+                            <option value="horizontal">Horizontal</option>
+                            <option value="vertical">Vertical</option>
+                            <option value="grid">Grid</option>
+                            <option value="panorama">Panorama (auto)</option>
+                        </select>
+                        <button id="stitchBtn" class="btn btn-success" disabled>Stitch Images</button>
+                        <button id="clearBtn" class="btn btn-danger">Clear All</button>
+                        <span class="counter">Images: <span id="imageCount">0</span></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stitch-result-section">
+                <div class="card">
+                    <h2>Stitched Result</h2>
+                    <div id="stitchedResult">
+                        <p class="message-empty">Capture at least 2 images and stitch</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="stitch.js"></script>
+</body>
+</html>
