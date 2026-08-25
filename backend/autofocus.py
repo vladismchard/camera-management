@@ -38,13 +38,13 @@ class AutoFocus:
                 variance = focus_info['variance']
 
                 result = {
-                    'step': idx + 1,
-                    'z_position': z_position,
-                    'z_offset': z_offset,
+                    'step': int(idx + 1),
+                    'z_position': int(z_position),
+                    'z_offset': int(z_offset),
                     'variance': float(variance),
                     'frame': frame.copy(),
-                    'is_focused': focus_info['is_focused'],
-                    'adaptive_threshold': focus_info['adaptive_threshold']
+                    'is_focused': bool(focus_info['is_focused']),
+                    'adaptive_threshold': float(focus_info['adaptive_threshold'])
                 }
 
                 self.focus_results.append(result)
@@ -62,12 +62,12 @@ class AutoFocus:
 
     def get_results(self):
         return [{
-            'step': r['step'],
-            'z_position': r['z_position'],
-            'z_offset': r['z_offset'],
-            'variance': r['variance'],
-            'is_focused': r['is_focused'],
-            'adaptive_threshold': r['adaptive_threshold']
+            'step': int(r['step']),
+            'z_position': int(r['z_position']),
+            'z_offset': int(r['z_offset']),
+            'variance': float(r['variance']),
+            'is_focused': bool(r['is_focused']),
+            'adaptive_threshold': float(r['adaptive_threshold'])
         } for r in self.focus_results]
 
     def get_best_frame(self):
@@ -77,7 +77,6 @@ class AutoFocus:
         return best['frame']
 
     def get_frame_by_step(self, step):
-        """Возвращает кадр по номеру шага"""
         for r in self.focus_results:
             if r['step'] == step:
                 return r['frame']
@@ -88,11 +87,11 @@ class AutoFocus:
             return None
         best = max(self.focus_results, key=lambda x: x['variance'])
         return {
-            'step': best['step'],
-            'z_position': best['z_position'],
-            'z_offset': best['z_offset'],
-            'variance': best['variance'],
-            'is_focused': best['is_focused']
+            'step': int(best['step']),
+            'z_position': int(best['z_position']),
+            'z_offset': int(best['z_offset']),
+            'variance': float(best['variance']),
+            'is_focused': bool(best['is_focused'])
         }
 
     def clear(self):
