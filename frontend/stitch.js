@@ -26,7 +26,6 @@ class StitchUI {
         item.textContent = `${new Date().toLocaleTimeString()} — ${message}`;
         log.prepend(item);
 
-        // Оставляем только последние 20 записей
         while (log.children.length > 20) {
             log.removeChild(log.lastChild);
         }
@@ -41,7 +40,7 @@ class StitchUI {
                 this.elements.imageCount.textContent = data.count;
                 this.elements.stitchBtn.disabled = data.count < 2;
                 this.logCapture(
-                    `Image captured ✓  Variance: ${data.variance.toFixed(2)}`,
+                    `Image captured. Variance: ${data.variance.toFixed(2)}`,
                     'success'
                 );
             } else if (data.status === 'skipped') {

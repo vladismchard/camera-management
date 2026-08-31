@@ -59,13 +59,13 @@ class AutofocusUI {
                 <div class="af-result-item ${isBest ? 'best' : ''}">
                     <div class="step-info">
                         <span>Step ${result.step}: Z ${result.z_offset >= 0 ? '+' : ''}${result.z_offset}</span>
-                        <span>${result.is_focused ? '✓ FOCUSED' : '✗ BLURRED'}</span>
+                        <span>${result.is_focused ? 'FOCUSED' : 'BLURRED'}</span>
                     </div>
                     <div class="variance-info">
                         Z=${result.z_position >= 0 ? '+' : ''}${result.z_position} |
                         Variance: ${result.variance.toFixed(2)} |
                         Threshold: ${result.adaptive_threshold.toFixed(2)}
-                        ${isBest ? ' | 🌟 BEST' : ''}
+                        ${isBest ? ' | BEST' : ''}
                     </div>
                 </div>
             `;
@@ -95,7 +95,7 @@ class AutofocusUI {
             card.className = `frame-card ${isBest ? 'frame-best' : ''}`;
 
             card.innerHTML = `
-                ${isBest ? '<div class="frame-best-badge">🌟 BEST</div>' : ''}
+                ${isBest ? '<div class="frame-best-badge">BEST</div>' : ''}
                 <img
                     src="${this.apiUrl}/autofocus/frame/${result.step}?t=${timestamp}"
                     alt="Step ${result.step}"
@@ -104,7 +104,7 @@ class AutofocusUI {
                 <div class="frame-info">
                     <div class="frame-step">Step ${result.step} — Z ${result.z_offset >= 0 ? '+' : ''}${result.z_offset}</div>
                     <div class="frame-variance ${result.is_focused ? 'focused' : 'blurred'}">
-                        ${result.is_focused ? '✓' : '✗'} ${result.variance.toFixed(2)}
+                        ${result.is_focused ? 'F' : 'B'} ${result.variance.toFixed(2)}
                     </div>
                 </div>
             `;
