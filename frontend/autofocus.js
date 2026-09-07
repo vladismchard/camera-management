@@ -8,9 +8,41 @@ class AutofocusUI {
             stepSize: document.getElementById('stepSize'),
             autofocusResults: document.getElementById('autofocusResults'),
             framesGrid: document.getElementById('framesGrid'),
+            checkFocusBtn: document.getElementById('checkFocusBtn'),
         };
         this.elements.autofocusBtn.addEventListener('click', () => this.runAutofocus());
+        this.elements.checkFocusBtn.addEventListener('click', () => this.checkFocus());
         this.bestStep = null;
+    }
+
+    async checkFocus() {
+        try {
+            this.elements.checkFocusBtn.disabled = true;
+            this.elements.checkFocusBtn.textContent = 'Checking...';
+            
+            const response = await fetch(`${this.apiUrl}/focus/check`, { method: 'POST' });
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                const resultHtml = `
+                    <div class="af-result-item ${data.is_focused ? 'best' : ''}">
+                        <div class="step-info">
+                            <span>Manual Check</span>
+                            <span>${data.is_focused ? 'FOCUSED' : 'BLURRED'}</span>
+                        </div>
+                        <div class="variance-info">
+                            Variance: ${data.variance.toFixed(2)} | Threshold: ${data.adaptive_threshold.toFixed(2)}
+                        </div>
+                    </div>
+                `;
+                this.elements.autofocusResults.innerHTML = resultHtml;
+            }
+        } catch (error) {
+            console.error('Failed to check focus:', error);
+        } finally {
+            this.elements.checkFocusBtn.disabled = false;
+            this.elements.checkFocusBtn.textContent = 'Check Focus';
+        }
     }
 
     async runAutofocus() {

@@ -15,6 +15,7 @@
                 <a href="index.html" class="nav-link active">Stream</a>
                 <a href="autofocus.html" class="nav-link">Autofocus</a>
                 <a href="stitch.html" class="nav-link">Stitch</a>
+                <button id="checkFocusBtn" class="btn btn-info focus-check-btn">Check Focus</button>
             </nav>
         </header>
 
@@ -25,28 +26,29 @@
 
             <div class="metrics-section">
                 <div class="status-card">
-                    <h2>Status</h2>
+                    <h2>Manual Focus Check</h2>
                     <div class="status-indicator" id="statusIndicator"></div>
-                    <p class="status-text" id="statusText">Waiting...</p>
+                    <p class="status-text" id="statusText">Press "Check Focus"</p>
+                    <p id="lastCheckTime" class="last-check-time"></p>
                 </div>
 
                 <div class="metrics-card">
-                    <h2>Metrics</h2>
+                    <h2>Last Check Metrics</h2>
                     <div class="metric">
-                        <span class="metric-label">Current Variance:</span>
-                        <span class="metric-value" id="variance">0.00</span>
-                    </div>
-                    <div class="metric">
-                        <span class="metric-label">Avg Variance:</span>
-                        <span class="metric-value" id="avgVariance">0.00</span>
+                        <span class="metric-label">Variance:</span>
+                        <span class="metric-value" id="variance">—</span>
                     </div>
                     <div class="metric">
                         <span class="metric-label">Threshold:</span>
-                        <span class="metric-value" id="threshold">0.00</span>
+                        <span class="metric-value" id="threshold">—</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Avg Variance:</span>
+                        <span class="metric-value" id="avgVariance">—</span>
                     </div>
                     <div class="metric">
                         <span class="metric-label">History Size:</span>
-                        <span class="metric-value" id="historySize">0</span>
+                        <span class="metric-value" id="historySize">—</span>
                     </div>
                 </div>
             </div>

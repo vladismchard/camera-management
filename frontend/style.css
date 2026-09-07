@@ -40,7 +40,9 @@ header h1 {
     gap: 4px;
     margin-top: 16px;
 }
-
+.focus-check-btn {
+    margin-left: auto;
+}
 .nav-link {
     padding: 8px 24px;
     border-radius: 4px;
@@ -628,4 +630,13 @@ header h1 {
     .autofocus-main {
         grid-template-columns: 1fr;
     }
+}
+
+.last-check-time {
+    margin-top: 10px;
+    font-size: 0.78em;
+    text-align: center;
+    color: #666;
+    font-weight: 500;
+    letter-spacing: 0.05em;
 }

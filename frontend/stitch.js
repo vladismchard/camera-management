@@ -11,12 +11,38 @@ class StitchUI {
             imageCount: document.getElementById('imageCount'),
             stitchedResult: document.getElementById('stitchedResult'),
             captureLog: document.getElementById('captureLog'),
+            checkFocusBtn: document.getElementById('checkFocusBtn'),
         };
         this.elements.stream.src = `${this.apiUrl}/stream`;
         this.elements.captureBtn.addEventListener('click', () => this.captureImage());
         this.elements.stitchBtn.addEventListener('click', () => this.stitchImages());
         this.elements.clearBtn.addEventListener('click', () => this.clearImages());
+        this.elements.checkFocusBtn.addEventListener('click', () => this.checkFocus());
         this.updateImageCount();
+    }
+
+    async checkFocus() {
+        try {
+            this.elements.checkFocusBtn.disabled = true;
+            this.elements.checkFocusBtn.textContent = 'Checking...';
+            
+            const response = await fetch(`${this.apiUrl}/focus/check`, { method: 'POST' });
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                const focusStatus = data.is_focused ? 'FOCUSED' : 'BLURRED';
+                const logType = data.is_focused ? 'success' : 'warning';
+                this.logCapture(
+                    `Focus check: ${focusStatus} | Variance: ${data.variance.toFixed(2)} | Threshold: ${data.adaptive_threshold.toFixed(2)}`,
+                    logType
+                );
+            }
+        } catch (error) {
+            this.logCapture('Failed to check focus: ' + error.message, 'error');
+        } finally {
+            this.elements.checkFocusBtn.disabled = false;
+            this.elements.checkFocusBtn.textContent = 'Check Focus';
+        }
     }
 
     logCapture(message, type = 'info') {
