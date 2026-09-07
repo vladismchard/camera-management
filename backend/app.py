@@ -194,7 +194,6 @@ def health():
         'autofocus': autofocus is not None,
         'image_count': stitcher.get_count() if stitcher else 0
     })
-
 @app.route('/focus/check', methods=['POST'])
 def check_focus_manual():
     """Ручная проверка фокуса без обновления истории стрима"""
@@ -210,14 +209,14 @@ def check_focus_manual():
         
         return jsonify({
             'status': 'success',
-            'is_focused': focus_info['is_focused'],
+            'is_focused': bool(focus_info['is_focused']),  # ← явное приведение к bool
             'variance': float(focus_info['variance']),
             'adaptive_threshold': float(focus_info['adaptive_threshold'])
         })
     except Exception as e:
         logger.error(f"Error in check_focus_manual: {e}", exc_info=True)
         return jsonify({'error': str(e)}), 500
-
+        
 def generate_frames():
     try:
         for frame in camera.capture_stream():
