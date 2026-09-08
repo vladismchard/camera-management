@@ -315,5 +315,45 @@ def check_focus_manual():
     except Exception as e:
         logger.error(f"Error in check_focus_manual: {e}", exc_info=True)
         return jsonify({'error': str(e)}), 500
+@app.route('/focus/threshold', methods=['GET'])
+def get_threshold():
+    """Получить текущие настройки порога"""
+    if detector is None:
+        return jsonify({'error': 'Detector not available'}), 503
+    
+    config = detector.get_threshold_config()
+    return jsonify({
+        'status': 'success',
+        **config
+    })
+
+
+@app.route('/focus/threshold', methods=['POST'])
+def set_threshold():
+    """Установить новые настройки порога"""
+    if detector is None:
+        return jsonify({'error': 'Detector not available'}), 503
+    
+    try:
+        data = request.get_json()
+        base_threshold = float(data.get('base_threshold', 100.0))
+        sensitivity = float(data.get('sensitivity', 0.7))
+        
+        # Валидация
+        if base_threshold < 0:
+            return jsonify({'error': 'base_threshold must be >= 0'}), 400
+        if not (0.1 <= sensitivity <= 1.5):
+            return jsonify({'error': 'sensitivity must be between 0.1 and 1.5'}), 400
+        
+        detector.set_threshold(base_threshold, sensitivity)
+        
+        return jsonify({
+            'status': 'success',
+            'base_threshold': base_threshold,
+            'sensitivity': sensitivity
+        })
+    except Exception as e:
+        logger.error(f"Error setting threshold: {e}")
+        return jsonify({'error': str(e)}), 500
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

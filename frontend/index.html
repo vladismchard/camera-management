@@ -1,61 +1,49 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welding Focus Detector — Stream</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-    <div class="container">
-        <header>
-            <h1>Welding Focus Detection</h1>
-            <nav class="navbar">
-                <a href="index.html" class="nav-link active">Stream</a>
-                <a href="autofocus.html" class="nav-link">Autofocus</a>
-                <a href="stitch.html" class="nav-link">Stitch</a>
-                <!-- Toggle будет добавлен динамически -->
-            </nav>
-        </header>
-
-        <main class="stream-main">
-            <div class="video-section">
-                <img id="stream" alt="Camera Stream">
-            </div>
-
-            <div class="metrics-section">
-                <div class="status-card">
-                    <h2>Manual Focus Check</h2>
-                    <button id="checkFocusBtn" class="btn btn-info focus-check-btn">Check Focus</button>
-                    <div class="status-indicator" id="statusIndicator"></div>
-                    <p class="status-text" id="statusText">Press "Check Focus"</p>
-                    <p id="lastCheckTime" class="last-check-time"></p>
-                </div>
-
-                <div class="metrics-card">
-                    <h2>Focus Metrics</h2>
-                    <div class="metric">
-                        <span class="metric-label">Variance:</span>
-                        <span class="metric-value" id="variance">—</span>
-                    </div>
-                    <div class="metric">
-                        <span class="metric-label">Threshold:</span>
-                        <span class="metric-value" id="threshold">—</span>
-                    </div>
-                    <div class="metric">
-                        <span class="metric-label">Avg Variance:</span>
-                        <span class="metric-value" id="avgVariance">—</span>
-                    </div>
-                    <div class="metric">
-                        <span class="metric-label">History Size:</span>
-                        <span class="metric-value" id="historySize">—</span>
-                    </div>
-                </div>
-            </div>
-        </main>
+<div class="metrics-section">
+    <div class="status-card">
+        <h2>Manual Focus Check</h2>
+        <button id="checkFocusBtn" class="btn btn-info focus-check-btn">Check Focus</button>
+        <div class="status-indicator" id="statusIndicator"></div>
+        <p class="status-text" id="statusText">Press "Check Focus"</p>
+        <p id="lastCheckTime" class="last-check-time"></p>
     </div>
 
-    <script src="focus-mode-toggle.js"></script>
-    <script src="stream.js"></script>
-</body>
-</html>
+    <div class="metrics-card">
+        <h2>Focus Threshold Settings</h2>
+        <div class="threshold-controls">
+            <div class="control-group">
+                <label for="baseThreshold">Base Threshold:</label>
+                <input type="number" id="baseThreshold" value="100" min="0" max="500" step="10">
+            </div>
+            <div class="control-group">
+                <label for="sensitivity">Sensitivity:</label>
+                <input type="range" id="sensitivity" value="0.7" min="0.1" max="1.5" step="0.05">
+                <span id="sensitivityValue">0.7</span>
+            </div>
+            <button id="applyThresholdBtn" class="btn btn-primary">Apply</button>
+        </div>
+    </div>
+
+    <div class="metrics-card">
+        <h2>Focus Metrics</h2>
+        <div class="metric">
+            <span class="metric-label">Variance:</span>
+            <span class="metric-value" id="variance">—</span>
+        </div>
+        <div class="metric">
+            <span class="metric-label">Adaptive Threshold:</span>
+            <span class="metric-value" id="threshold">—</span>
+        </div>
+        <div class="metric">
+            <span class="metric-label">Base Threshold:</span>
+            <span class="metric-value" id="baseThresholdDisplay">100</span>
+        </div>
+        <div class="metric">
+            <span class="metric-label">Avg Variance:</span>
+            <span class="metric-value" id="avgVariance">—</span>
+        </div>
+        <div class="metric">
+            <span class="metric-label">History Size:</span>
+            <span class="metric-value" id="historySize">—</span>
+        </div>
+    </div>
+</div>
