@@ -1,4 +1,3 @@
-<!-- frontend/autofocus.html -->
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -15,42 +14,36 @@
                 <a href="index.html" class="nav-link">Stream</a>
                 <a href="autofocus.html" class="nav-link active">Autofocus</a>
                 <a href="stitch.html" class="nav-link">Stitch</a>
-                <button id="checkFocusBtn" class="btn btn-info focus-check-btn">Check Focus</button>
             </nav>
         </header>
 
         <main class="autofocus-main">
-            <div class="af-controls-section">
-                <div class="card">
-                    <h2>Autofocus Controls</h2>
-                    <div class="input-group">
-                        <label for="numSteps">Steps:</label>
-                        <input type="number" id="numSteps" value="3" min="2" max="10">
-                        <label for="stepSize">Step Size:</label>
-                        <input type="number" id="stepSize" value="1" min="1" max="5">
-                    </div>
-                    <button id="autofocusBtn" class="btn btn-info">Run Autofocus</button>
+            <div class="controls-section">
+                <h2>Autofocus Scan</h2>
+                <div class="control-group">
+                    <label>Number of Steps:</label>
+                    <input type="number" id="numSteps" value="5" min="3" max="15">
                 </div>
-
-                <div class="card">
-                    <h2>Results</h2>
-                    <div id="autofocusResults">
-                        <p class="message-empty">Run autofocus to see results</p>
-                    </div>
+                <div class="control-group">
+                    <label>Step Size:</label>
+                    <input type="number" id="stepSize" value="1" min="1" max="5">
                 </div>
+                <button id="startBtn" class="btn btn-primary">Start Autofocus</button>
             </div>
 
-            <div class="af-frames-section">
-                <div class="card">
-                    <h2>All Frames</h2>
-                    <div id="framesGrid" class="frames-grid">
-                        <p class="message-empty">No frames yet</p>
-                    </div>
-                </div>
+            <div class="results-section">
+                <h2>Results</h2>
+                <div id="resultsContainer"></div>
+            </div>
+
+            <div class="best-frame-section">
+                <h2>Best Focused Frame</h2>
+                <img id="bestFrame" alt="Best Frame">
             </div>
         </main>
     </div>
 
+    <script src="focus-mode-toggle.js"></script>
     <script src="autofocus.js"></script>
 </body>
 </html>

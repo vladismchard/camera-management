@@ -3,146 +3,61 @@ class AutofocusUI {
     constructor() {
         this.apiUrl = window.location.protocol + '//' + window.location.hostname + ':5000';
         this.elements = {
-            autofocusBtn: document.getElementById('autofocusBtn'),
+            startBtn: document.getElementById('startBtn'),
             numSteps: document.getElementById('numSteps'),
             stepSize: document.getElementById('stepSize'),
-            autofocusResults: document.getElementById('autofocusResults'),
-            framesGrid: document.getElementById('framesGrid'),
-            checkFocusBtn: document.getElementById('checkFocusBtn'),
+            resultsContainer: document.getElementById('resultsContainer'),
+            bestFrame: document.getElementById('bestFrame')
         };
-        this.elements.autofocusBtn.addEventListener('click', () => this.runAutofocus());
-        this.elements.checkFocusBtn.addEventListener('click', () => this.checkFocus());
-        this.bestStep = null;
+        
+        this.modeToggle = new FocusModeToggle(this.apiUrl);
+        
+        this.elements.startBtn.addEventListener('click', () => this.startAutofocus());
     }
 
-    async checkFocus() {
+    async startAutofocus() {
         try {
-            this.elements.checkFocusBtn.disabled = true;
-            this.elements.checkFocusBtn.textContent = 'Checking...';
-            
-            const response = await fetch(`${this.apiUrl}/focus/check`, { method: 'POST' });
-            const data = await response.json();
-            
-            if (data.status === 'success') {
-                const resultHtml = `
-                    <div class="af-result-item ${data.is_focused ? 'best' : ''}">
-                        <div class="step-info">
-                            <span>Manual Check</span>
-                            <span>${data.is_focused ? 'FOCUSED' : 'BLURRED'}</span>
-                        </div>
-                        <div class="variance-info">
-                            Variance: ${data.variance.toFixed(2)} | Threshold: ${data.adaptive_threshold.toFixed(2)}
-                        </div>
-                    </div>
-                `;
-                this.elements.autofocusResults.innerHTML = resultHtml;
-            }
-        } catch (error) {
-            console.error('Failed to check focus:', error);
-        } finally {
-            this.elements.checkFocusBtn.disabled = false;
-            this.elements.checkFocusBtn.textContent = 'Check Focus';
-        }
-    }
+            this.elements.startBtn.disabled = true;
+            this.elements.startBtn.textContent = 'Running...';
+            this.elements.resultsContainer.innerHTML = '<p>Scanning...</p>';
 
-    async runAutofocus() {
-        this.elements.autofocusBtn.disabled = true;
-        this.elements.autofocusBtn.textContent = 'Running...';
-        this.elements.autofocusResults.innerHTML =
-            '<p class="message-info">Running autofocus series...</p>';
-        this.elements.framesGrid.innerHTML = '';
-        this.bestStep = null;
-
-        const numSteps = parseInt(this.elements.numSteps.value);
-        const stepSize = parseInt(this.elements.stepSize.value);
-
-        try {
             const response = await fetch(`${this.apiUrl}/autofocus`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ num_steps: numSteps, step_size: stepSize })
+                body: JSON.stringify({
+                    num_steps: parseInt(this.elements.numSteps.value),
+                    step_size: parseInt(this.elements.stepSize.value)
+                })
             });
+
             const data = await response.json();
 
             if (data.status === 'success') {
-                this.bestStep = data.best.step;
-                this.displayResults(data);
-                this.displayFrames(data.results);
-            } else {
-                this.elements.autofocusResults.innerHTML =
-                    `<p class="message-error">Error: ${data.error}</p>`;
+                this.displayResults(data.results);
+                this.displayBestFrame(data.best_frame);
             }
         } catch (error) {
-            this.elements.autofocusResults.innerHTML =
-                `<p class="message-error">Failed to run autofocus</p>`;
+            console.error('Autofocus failed:', error);
+            this.elements.resultsContainer.innerHTML = '<p class="error">Failed to run autofocus</p>';
         } finally {
-            this.elements.autofocusBtn.disabled = false;
-            this.elements.autofocusBtn.textContent = 'Run Autofocus';
+            this.elements.startBtn.disabled = false;
+            this.elements.startBtn.textContent = 'Start Autofocus';
         }
     }
 
-    displayResults(data) {
-        const { results, best, total_steps } = data;
-        let html = `<p class="message-info">Completed ${total_steps} steps</p>`;
-
-        results.forEach((result) => {
-            const isBest = result.step === best.step;
-            html += `
-                <div class="af-result-item ${isBest ? 'best' : ''}">
-                    <div class="step-info">
-                        <span>Step ${result.step}: Z ${result.z_offset >= 0 ? '+' : ''}${result.z_offset}</span>
-                        <span>${result.is_focused ? 'FOCUSED' : 'BLURRED'}</span>
-                    </div>
-                    <div class="variance-info">
-                        Z=${result.z_position >= 0 ? '+' : ''}${result.z_position} |
-                        Variance: ${result.variance.toFixed(2)} |
-                        Threshold: ${result.adaptive_threshold.toFixed(2)}
-                        ${isBest ? ' | BEST' : ''}
-                    </div>
-                </div>
-            `;
-        });
-
-        html += `
-            <div class="best-summary">
-                <strong>Best Focus:</strong>
-                Z = ${best.z_offset >= 0 ? '+' : ''}${best.z_offset}
-                (abs: ${best.z_position >= 0 ? '+' : ''}${best.z_position}) |
-                Variance: ${best.variance.toFixed(2)}
+    displayResults(results) {
+        this.elements.resultsContainer.innerHTML = results.map((r, i) => `
+            <div class="result-item ${r.step === results.find(x => x.is_best).step ? 'best' : ''}">
+                <span>Step ${r.step}</span>
+                <span>Z: ${r.z_position}</span>
+                <span>Variance: ${r.variance.toFixed(2)}</span>
+                <span>${r.is_focused ? '✓' : '✗'}</span>
             </div>
-        `;
-
-        this.elements.autofocusResults.innerHTML = html;
+        `).join('');
     }
 
-    displayFrames(results) {
-        const grid = this.elements.framesGrid;
-        grid.innerHTML = '';
-
-        results.forEach((result) => {
-            const isBest = result.step === this.bestStep;
-            const timestamp = Date.now();
-
-            const card = document.createElement('div');
-            card.className = `frame-card ${isBest ? 'frame-best' : ''}`;
-
-            card.innerHTML = `
-                ${isBest ? '<div class="frame-best-badge">BEST</div>' : ''}
-                <img
-                    src="${this.apiUrl}/autofocus/frame/${result.step}?t=${timestamp}"
-                    alt="Step ${result.step}"
-                    loading="lazy"
-                >
-                <div class="frame-info">
-                    <div class="frame-step">Step ${result.step} — Z ${result.z_offset >= 0 ? '+' : ''}${result.z_offset}</div>
-                    <div class="frame-variance ${result.is_focused ? 'focused' : 'blurred'}">
-                        ${result.is_focused ? 'F' : 'B'} ${result.variance.toFixed(2)}
-                    </div>
-                </div>
-            `;
-
-            grid.appendChild(card);
-        });
+    displayBestFrame(bestFrame) {
+        this.elements.bestFrame.src = `${this.apiUrl}/autofocus/best-frame?t=${Date.now()}`;
     }
 }
 

@@ -1,4 +1,3 @@
-<!-- frontend/index.html -->
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -15,7 +14,7 @@
                 <a href="index.html" class="nav-link active">Stream</a>
                 <a href="autofocus.html" class="nav-link">Autofocus</a>
                 <a href="stitch.html" class="nav-link">Stitch</a>
-                <button id="checkFocusBtn" class="btn btn-info focus-check-btn">Check Focus</button>
+                <!-- Toggle будет добавлен динамически -->
             </nav>
         </header>
 
@@ -27,13 +26,14 @@
             <div class="metrics-section">
                 <div class="status-card">
                     <h2>Manual Focus Check</h2>
+                    <button id="checkFocusBtn" class="btn btn-info focus-check-btn">Check Focus</button>
                     <div class="status-indicator" id="statusIndicator"></div>
                     <p class="status-text" id="statusText">Press "Check Focus"</p>
                     <p id="lastCheckTime" class="last-check-time"></p>
                 </div>
 
                 <div class="metrics-card">
-                    <h2>Last Check Metrics</h2>
+                    <h2>Focus Metrics</h2>
                     <div class="metric">
                         <span class="metric-label">Variance:</span>
                         <span class="metric-value" id="variance">—</span>
@@ -55,6 +55,7 @@
         </main>
     </div>
 
+    <script src="focus-mode-toggle.js"></script>
     <script src="stream.js"></script>
 </body>
 </html>

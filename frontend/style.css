@@ -640,3 +640,91 @@ header h1 {
     font-weight: 500;
     letter-spacing: 0.05em;
 }
+.focus-mode-toggle {
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+}
+
+.toggle-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.toggle-label {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 26px;
+    margin: 0;
+    cursor: pointer;
+}
+
+.toggle-checkbox {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #4b5563;
+    transition: 0.3s;
+    border-radius: 26px;
+}
+
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: 0.3s;
+    border-radius: 50%;
+}
+
+.toggle-checkbox:checked + .toggle-slider {
+    background-color: #4ade80;
+}
+
+.toggle-checkbox:checked + .toggle-slider:before {
+    transform: translateX(24px);
+}
+
+.toggle-text {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.9em;
+    font-weight: 500;
+    color: #60a5fa;
+    white-space: nowrap;
+}
+
+.mode-icon {
+    font-size: 1.2em;
+}
+
+@media (max-width: 768px) {
+    .focus-mode-toggle {
+        margin-left: 0;
+        margin-top: 10px;
+    }
+    
+    .toggle-container {
+        width: 100%;
+        justify-content: space-between;
+    }
+}

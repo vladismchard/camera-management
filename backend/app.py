@@ -10,7 +10,7 @@ import cv2
 import os
 import json
 import numpy as np
-
+auto_focus_mode = False
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -194,6 +194,29 @@ def health():
         'autofocus': autofocus is not None,
         'image_count': stitcher.get_count() if stitcher else 0
     })
+@app.route('/focus/mode', methods=['GET'])
+def get_focus_mode():
+    """Получить текущий режим проверки фокуса"""
+    return jsonify({
+        'status': 'success',
+        'auto_mode': auto_focus_mode
+    })
+
+@app.route('/focus/mode', methods=['POST'])
+def set_focus_mode():
+    """Установить режим проверки фокуса"""
+    global auto_focus_mode
+    try:
+        data = request.get_json()
+        auto_focus_mode = data.get('auto_mode', False)
+        logger.info(f"Focus mode changed to: {'AUTO' if auto_focus_mode else 'MANUAL'}")
+        return jsonify({
+            'status': 'success',
+            'auto_mode': auto_focus_mode
+        })
+    except Exception as e:
+        logger.error(f"Error setting focus mode: {e}")
+        return jsonify({'error': str(e)}), 500
 @app.route('/focus/check', methods=['POST'])
 def check_focus_manual():
     """Ручная проверка фокуса без обновления истории стрима"""
@@ -218,14 +241,27 @@ def check_focus_manual():
         return jsonify({'error': str(e)}), 500
         
 def generate_frames():
+    """Generate video frames with optional focus detection overlay"""
+    if camera is None:
+        logger.error("Camera not available for streaming")
+        return
     try:
-        for frame in camera.capture_stream():
-            result = detector.analyze(frame)
-            _, buffer = camera.encode_frame(result['annotated_frame'])
-            yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
+        for frame in camera.get_frames():
+            if frame is None:
+                continue            
+            if auto_focus_mode:
+                focus_info = detector.check_focus(frame)
+                annotated_frame = _annotate_frame(frame, focus_info)
+            else:
+                annotated_frame = frame
+            
+            ret, buffer = cv2.imencode('.jpg', annotated_frame)
+            if ret:
+                frame_bytes = buffer.tobytes()
+                yield (b'--frame\r\n'
+                       b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
     except Exception as e:
-        logger.error(f"Error generating frames: {e}")
+        logger.error(f"Error in frame generation: {e}", exc_info=True)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
