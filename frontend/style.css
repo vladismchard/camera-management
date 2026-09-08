@@ -37,12 +37,17 @@ header h1 {
 .navbar {
     display: flex;
     justify-content: center;
+    align-items: center;
     gap: 4px;
     margin-top: 16px;
+    flex-wrap: wrap; /* Перенос на новую строку на мобильных */
 }
+
+/* Кнопка Check Focus в navbar */
 .focus-check-btn {
-    margin-left: auto;
+    margin-left: 8px;
 }
+
 .nav-link {
     padding: 8px 24px;
     border-radius: 4px;
@@ -643,24 +648,24 @@ header h1 {
 .focus-mode-toggle {
     display: flex;
     align-items: center;
-    margin-left: auto;
+    margin-left: 16px; /* Отступ от ссылок */
 }
 
 .toggle-container {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 8px 16px;
+    gap: 10px;
+    padding: 6px 14px;
     background: rgba(255, 255, 255, 0.05);
-    border-radius: 8px;
+    border-radius: 6px;
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .toggle-label {
     position: relative;
     display: inline-block;
-    width: 50px;
-    height: 26px;
+    width: 44px;
+    height: 22px;
     margin: 0;
     cursor: pointer;
 }
@@ -680,16 +685,16 @@ header h1 {
     bottom: 0;
     background-color: #4b5563;
     transition: 0.3s;
-    border-radius: 26px;
+    border-radius: 22px;
 }
 
 .toggle-slider:before {
     position: absolute;
     content: "";
-    height: 18px;
-    width: 18px;
-    left: 4px;
-    bottom: 4px;
+    height: 16px;
+    width: 16px;
+    left: 3px;
+    bottom: 3px;
     background-color: white;
     transition: 0.3s;
     border-radius: 50%;
@@ -700,31 +705,39 @@ header h1 {
 }
 
 .toggle-checkbox:checked + .toggle-slider:before {
-    transform: translateX(24px);
+    transform: translateX(22px);
 }
 
 .toggle-text {
     display: flex;
     align-items: center;
-    gap: 6px;
-    font-size: 0.9em;
+    gap: 5px;
+    font-size: 0.82em;
     font-weight: 500;
     color: #60a5fa;
     white-space: nowrap;
 }
 
 .mode-icon {
-    font-size: 1.2em;
+    font-size: 1.1em;
 }
 
+/* Адаптация для мобильных */
 @media (max-width: 768px) {
+    .navbar {
+        flex-direction: column;
+        gap: 12px;
+    }
     .focus-mode-toggle {
         margin-left: 0;
-        margin-top: 10px;
+        width: 100%;
     }
-    
     .toggle-container {
         width: 100%;
-        justify-content: space-between;
+        justify-content: center;
+    }
+    .focus-check-btn {
+        margin-left: 0;
+        width: 100%;
     }
 }
