@@ -18,32 +18,40 @@
         </header>
 
         <main class="autofocus-main">
-            <div class="controls-section">
-                <h2>Autofocus Scan</h2>
-                <div class="control-group">
-                    <label>Number of Steps:</label>
-                    <input type="number" id="numSteps" value="5" min="3" max="15">
+            <div class="af-controls-section">
+                <div class="card">
+                    <h2>Autofocus Scan</h2>
+                    <div class="input-group">
+                        <label for="numSteps">Steps:</label>
+                        <input type="number" id="numSteps" value="5" min="3" max="15">
+                    </div>
+                    <div class="input-group">
+                        <label for="stepSize">Step Size:</label>
+                        <input type="number" id="stepSize" value="1" min="1" max="5">
+                    </div>
+                    <button id="autofocusBtn" class="btn btn-primary">Run Autofocus</button>
                 </div>
-                <div class="control-group">
-                    <label>Step Size:</label>
-                    <input type="number" id="stepSize" value="1" min="1" max="5">
+
+                <div class="card">
+                    <h2>Results</h2>
+                    <div id="autofocusResults">
+                        <p class="message-empty">Run autofocus scan to see results</p>
+                    </div>
                 </div>
-                <button id="startBtn" class="btn btn-primary">Start Autofocus</button>
             </div>
 
-            <div class="results-section">
-                <h2>Results</h2>
-                <div id="resultsContainer"></div>
-            </div>
-
-            <div class="best-frame-section">
-                <h2>Best Focused Frame</h2>
-                <img id="bestFrame" alt="Best Frame">
+            <div class="af-frames-section">
+                <div class="card">
+                    <h2>Best Focused Frame</h2>
+                    <div id="autofocusImage">
+                        <p class="message-empty">No frame captured yet</p>
+                    </div>
+                </div>
             </div>
         </main>
     </div>
 
     <script src="focus-mode-toggle.js"></script>
-    <script src="autofocus.js"></script>
+    <script src="autofocus-page.js"></script>
 </body>
 </html>
