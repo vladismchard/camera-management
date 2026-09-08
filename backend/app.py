@@ -10,7 +10,9 @@ import cv2
 import os
 import json
 import numpy as np
+
 auto_focus_mode = False
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -43,6 +45,66 @@ except Exception as e:
     stitcher = None
     autofocus = None
 
+
+def _annotate_frame(frame, focus_info):
+    """Добавляет аннотации фокуса на кадр"""
+    annotated = frame.copy()
+    h, w = annotated.shape[:2]
+    
+    # Определяем цвет и текст статуса
+    is_focused = focus_info['is_focused']
+    color = (0, 255, 0) if is_focused else (0, 0, 255)  # BGR: зелёный/красный
+    status_text = "FOCUSED" if is_focused else "BLURRED"
+    
+    # Рисуем полупрозрачный фон для текста
+    overlay = annotated.copy()
+    cv2.rectangle(overlay, (10, 10), (300, 100), (0, 0, 0), -1)
+    cv2.addWeighted(overlay, 0.6, annotated, 0.4, 0, annotated)
+    
+    # Добавляем текст статуса
+    cv2.putText(annotated, status_text, (20, 50), 
+                cv2.FONT_HERSHEY_SIMPLEX, 1.2, color, 3)
+    
+    # Добавляем метрики
+    variance_text = f"Variance: {focus_info['variance']:.2f}"
+    threshold_text = f"Threshold: {focus_info['adaptive_threshold']:.2f}"
+    
+    cv2.putText(annotated, variance_text, (20, 80), 
+                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+    cv2.putText(annotated, threshold_text, (20, 95), 
+                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+    
+    return annotated
+
+
+def generate_frames():
+    """Generate video frames with optional focus detection overlay"""
+    if camera is None:
+        logger.error("Camera not available for streaming")
+        return
+    
+    try:
+        for frame in camera.capture_stream():
+            if frame is None:
+                continue
+            
+            # Проверяем фокус только если включен auto_mode
+            if auto_focus_mode:
+                focus_info = detector.check_focus(frame)
+                annotated_frame = _annotate_frame(frame, focus_info)
+            else:
+                # В ручном режиме просто показываем кадр
+                annotated_frame = frame
+            
+            ret, buffer = cv2.imencode('.jpg', annotated_frame)
+            if ret:
+                frame_bytes = buffer.tobytes()
+                yield (b'--frame\r\n'
+                       b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+    except Exception as e:
+        logger.error(f"Error in frame generation: {e}", exc_info=True)
+
+
 @app.route('/stream')
 def stream():
     if camera is None:
@@ -52,11 +114,13 @@ def stream():
         mimetype='multipart/x-mixed-replace; boundary=frame'
     )
 
+
 @app.route('/metrics')
 def metrics():
     if detector is None:
         return jsonify({'error': 'Detector not available'}), 503
     return jsonify(detector.get_metrics())
+
 
 @app.route('/capture', methods=['POST'])
 def capture():
@@ -95,6 +159,7 @@ def capture():
         logger.error(f"Error in capture: {e}", exc_info=True)
         return jsonify({'error': str(e)}), 500
 
+
 @app.route('/autofocus', methods=['POST'])
 def run_autofocus():
     logger.info("Autofocus endpoint called")
@@ -126,6 +191,7 @@ def run_autofocus():
         logger.error(f"Error in autofocus: {e}", exc_info=True)
         return jsonify({'error': str(e)}), 500
 
+
 @app.route('/autofocus/frame/<int:step>')
 def get_autofocus_frame(step):
     if autofocus is None:
@@ -138,6 +204,7 @@ def get_autofocus_frame(step):
     _, buffer = camera.encode_frame(frame)
     return Response(buffer.tobytes(), mimetype='image/jpeg')
 
+
 @app.route('/autofocus/best-frame')
 def get_best_frame():
     if autofocus is None:
@@ -149,6 +216,7 @@ def get_best_frame():
 
     _, buffer = camera.encode_frame(frame)
     return Response(buffer.tobytes(), mimetype='image/jpeg')
+
 
 @app.route('/stitch', methods=['POST'])
 def stitch():
@@ -168,14 +236,17 @@ def stitch():
         })
     return jsonify({'error': result}), 500
 
+
 @app.route('/clear', methods=['POST'])
 def clear():
     stitcher.clear()
     return jsonify({'status': 'success', 'count': 0})
 
+
 @app.route('/count')
 def count():
     return jsonify({'count': stitcher.get_count()})
+
 
 @app.route('/stitched/<filename>')
 def get_stitched(filename):
@@ -183,6 +254,7 @@ def get_stitched(filename):
     if os.path.exists(filepath):
         return send_file(filepath, mimetype='image/jpeg')
     return jsonify({'error': 'File not found'}), 404
+
 
 @app.route('/health')
 def health():
@@ -194,6 +266,8 @@ def health():
         'autofocus': autofocus is not None,
         'image_count': stitcher.get_count() if stitcher else 0
     })
+
+
 @app.route('/focus/mode', methods=['GET'])
 def get_focus_mode():
     """Получить текущий режим проверки фокуса"""
@@ -201,6 +275,7 @@ def get_focus_mode():
         'status': 'success',
         'auto_mode': auto_focus_mode
     })
+
 
 @app.route('/focus/mode', methods=['POST'])
 def set_focus_mode():
@@ -217,6 +292,7 @@ def set_focus_mode():
     except Exception as e:
         logger.error(f"Error setting focus mode: {e}")
         return jsonify({'error': str(e)}), 500
+
 @app.route('/focus/check', methods=['POST'])
 def check_focus_manual():
     """Ручная проверка фокуса без обновления истории стрима"""
@@ -232,36 +308,12 @@ def check_focus_manual():
         
         return jsonify({
             'status': 'success',
-            'is_focused': bool(focus_info['is_focused']),  # ← явное приведение к bool
+            'is_focused': bool(focus_info['is_focused']),
             'variance': float(focus_info['variance']),
             'adaptive_threshold': float(focus_info['adaptive_threshold'])
         })
     except Exception as e:
         logger.error(f"Error in check_focus_manual: {e}", exc_info=True)
         return jsonify({'error': str(e)}), 500
-        
-def generate_frames():
-    """Generate video frames with optional focus detection overlay"""
-    if camera is None:
-        logger.error("Camera not available for streaming")
-        return
-    try:
-        for frame in camera.get_frames():
-            if frame is None:
-                continue            
-            if auto_focus_mode:
-                focus_info = detector.check_focus(frame)
-                annotated_frame = _annotate_frame(frame, focus_info)
-            else:
-                annotated_frame = frame
-            
-            ret, buffer = cv2.imencode('.jpg', annotated_frame)
-            if ret:
-                frame_bytes = buffer.tobytes()
-                yield (b'--frame\r\n'
-                       b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
-    except Exception as e:
-        logger.error(f"Error in frame generation: {e}", exc_info=True)
-
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
