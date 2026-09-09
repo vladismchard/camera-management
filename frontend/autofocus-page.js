@@ -69,7 +69,7 @@ class AutofocusPageUI {
     displayAutofocusResults(data) {
         const { results, best, total_steps } = data;
 
-        let html = `<p class="message-info">✓ Completed ${total_steps} steps</p>`;
+        let html = `<p class="message-info">Completed ${total_steps} steps</p>`;
 
         results.forEach((result) => {
             const isBest = result.step === best.step;
@@ -79,12 +79,12 @@ class AutofocusPageUI {
                 <div class="${cssClass}">
                     <div class="step-info">
                         <span>Step ${result.step}: Z ${result.z_offset >= 0 ? '+' : ''}${result.z_offset}</span>
-                        <span>${result.is_focused ? '✓ FOCUSED' : '✗ BLURRED'}</span>
+                        <span>${result.is_focused ? 'FOCUSED' : 'BLURRED'}</span>
                     </div>
                     <div class="variance-info">
                         Position: Z=${result.z_position >= 0 ? '+' : ''}${result.z_position} |
                         Variance: ${result.variance.toFixed(2)}
-                        ${isBest ? ' | 🌟 BEST' : ''}
+                        ${isBest ? ' | BEST' : ''}
                     </div>
                 </div>
             `;
@@ -92,11 +92,11 @@ class AutofocusPageUI {
 
         html += `
             <div class="best-summary">
-                <strong>✓ Best Focus Position:</strong><br>
+                <strong>Best Focus Position:</strong><br>
                 Z Offset: ${best.z_offset >= 0 ? '+' : ''}${best.z_offset}<br>
                 Z Absolute: ${best.z_position >= 0 ? '+' : ''}${best.z_position}<br>
                 Variance: ${best.variance.toFixed(2)}<br>
-                ${best.is_focused ? '✓ In Focus' : '✗ Below Threshold'}
+                ${best.is_focused ? 'In Focus' : 'Below Threshold'}
             </div>
         `;
 
@@ -110,8 +110,8 @@ class AutofocusPageUI {
                 <img src="${this.apiUrl}/autofocus/best-frame?t=${timestamp}" 
                      alt="Best Focus Frame" 
                      style="width: 100%; border-radius: 4px; border: 1px solid #1e1e1e;">
-                <p style="text-align: center; margin-top: 12px; color: #4ade80; font-weight: 600; font-size: 0.85em; text-transform: uppercase; letter-spacing: 0.05em;">
-                    ✓ Best Focused Image
+                <p style="text-align: center; margin-top: 12px; color: #2ecc8f; font-weight: 600; font-size: 0.85em; text-transform: uppercase; letter-spacing: 0.05em;">
+                    Best Focused Image
                 </p>
             `;
         } catch (error) {

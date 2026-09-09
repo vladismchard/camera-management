@@ -108,7 +108,7 @@ class StreamUI {
 
             if (data.status === 'success') {
                 this.elements.statusIndicator.className = `status-indicator ${data.is_focused ? 'focused' : 'blurred'}`;
-                this.elements.statusText.textContent = data.is_focused ? '✓ FOCUSED' : '✗ BLURRED';
+                this.elements.statusText.textContent = data.is_focused ? 'FOCUSED' : 'BLURRED';
                 this.elements.variance.textContent = data.variance.toFixed(2);
                 this.elements.threshold.textContent = data.adaptive_threshold.toFixed(2);
 
@@ -134,7 +134,7 @@ class StreamUI {
                 this.elements.variance.textContent = data.current_variance.toFixed(2);
                 this.elements.threshold.textContent = data.adaptive_threshold.toFixed(2);
                 this.elements.statusIndicator.className = `status-indicator ${data.is_focused ? 'focused' : 'blurred'}`;
-                this.elements.statusText.textContent = data.is_focused ? '✓ FOCUSED' : '✗ BLURRED';
+                this.elements.statusText.textContent = data.is_focused ? 'FOCUSED' : 'BLURRED';
             }
 
             this.elements.avgVariance.textContent = data.avg_variance.toFixed(2);

@@ -134,12 +134,12 @@ class WeldingFocusDetectionUI {
                 <div class="${cssClass}">
                     <div class="step-info">
                         <span>Step ${result.step}: Z ${result.z_offset >= 0 ? '+' : ''}${result.z_offset}</span>
-                        <span>${result.is_focused ? '✓ FOCUSED' : '✗ BLURRED'}</span>
+                        <span>${result.is_focused ? 'FOCUSED' : 'BLURRED'}</span>
                     </div>
                     <div class="variance-info">
                         Position: Z=${result.z_position >= 0 ? '+' : ''}${result.z_position} | 
                         Variance: ${result.variance.toFixed(2)}
-                        ${isBest ? ' | 🌟 BEST' : ''}
+                        ${isBest ? ' | BEST' : ''}
                     </div>
                 </div>
             `;
