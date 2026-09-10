@@ -311,13 +311,27 @@ def health():
     })
 
 
-@app.route('/focus/mode', methods=['GET'])
-def get_focus_mode():
-    """Получить текущий режим проверки фокуса"""
-    return jsonify({
-        'status': 'success',
-        'auto_mode': auto_focus_mode
-    })
+@app.route('/focus/mode', methods=['POST'])
+def set_focus_mode():
+    """Установить режим проверки фокуса"""
+    global auto_focus_mode
+    try:
+        data = request.get_json()
+        auto_focus_mode = data.get('auto_mode', False)
+        if detector is not None:
+            if auto_focus_mode:
+                detector.set_threshold(detector.base_threshold, sensitivity=1.0)
+            else:
+                detector.set_threshold(detector.base_threshold, sensitivity=0.0)
+        
+        logger.info(f"Focus mode changed to: {'AUTO' if auto_focus_mode else 'MANUAL'}")
+        return jsonify({
+            'status': 'success',
+            'auto_mode': auto_focus_mode
+        })
+    except Exception as e:
+        logger.error(f"Error setting focus mode: {e}")
+        return jsonify({'error': str(e)}), 500
 
 
 @app.route('/focus/mode', methods=['POST'])
@@ -379,17 +393,18 @@ def set_threshold():
     try:
         data = request.get_json()
         base_threshold = float(data.get('base_threshold', 100.0))
-        sensitivity = float(data.get('sensitivity', 0.0)) 
+        # Берем текущую чувствительность детектора, чтобы не сбрасывать её
+        current_sensitivity = detector.sensitivity 
         
         if base_threshold < 0:
             return jsonify({'error': 'Базовый порог должен быть >= 0'}), 400
         
-        detector.set_threshold(base_threshold, sensitivity)
+        detector.set_threshold(base_threshold, current_sensitivity)
         
         return jsonify({
             'status': 'success',
             'base_threshold': base_threshold,
-            'sensitivity': sensitivity
+            'sensitivity': current_sensitivity
         })
     except Exception as e:
         logger.error(f"Error setting threshold: {e}")
