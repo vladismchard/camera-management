@@ -5,7 +5,7 @@ import time
 logger = logging.getLogger(__name__)
 
 class AutoFocus:
-    CAPTURE_DELAY = 5  # секунд между снимками
+    CAPTURE_DELAY = 3  # секунд между снимками
 
     def __init__(self, camera, focus_detector):
         self.camera = camera

@@ -56,7 +56,7 @@ class StreamUI {
             const data = await response.json();
 
             if (data.status === 'success') {
-                console.log('Threshold updated:', data);
+                await this.fetchMetrics();
             } else {
                 alert('Не удалось обновить порог: ' + data.error);
             }
@@ -115,11 +115,12 @@ class StreamUI {
             const data = await response.json();
 
             if (this.modeToggle.getMode()) {
-                this.elements.variance.textContent = data.current_variance.toFixed(2);
-                this.elements.threshold.textContent = data.adaptive_threshold.toFixed(2);
                 this.elements.statusIndicator.className = `status-indicator ${data.is_focused ? 'focused' : 'blurred'}`;
                 this.elements.statusText.textContent = data.is_focused ? 'В ФОКУСЕ' : 'НЕ В ФОКУСЕ';
             }
+
+            this.elements.variance.textContent = data.current_variance.toFixed(2);
+            this.elements.threshold.textContent = data.adaptive_threshold.toFixed(2);
 
         } catch (error) {
             console.error('Failed to fetch metrics:', error);

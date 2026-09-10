@@ -73,7 +73,9 @@ class AutofocusPageUI {
             }
 
             this.scanId = new Date().getTime();
-            this.elements.autofocusResults.innerHTML = '<p class="message-info">Сканирование запущено. Интервал между кадрами: 5 секунд</p>';
+            const delay = parseInt(data.delay) || 3;
+            const delayLabel = delay >= 5 ? `5 секунд` : (delay >= 2 ? `${delay} секунды` : `${delay} секунду`);
+            this.elements.autofocusResults.innerHTML = `<p class="message-info">Сканирование запущено. Интервал между кадрами: ${delayLabel}</p>`;
 
             let running = true;
             while (running) {
@@ -82,7 +84,7 @@ class AutofocusPageUI {
                 if (progress === null) break;
                 running = progress.running;
 
-                const delay = progress.delay || 5;
+                const progressDelay = progress.delay || delay;
                 const startedAt = progress.started_at || 0;
 
                 if (progress.results.length > 0) {
@@ -92,12 +94,12 @@ class AutofocusPageUI {
                         total_steps: progress.results.length,
                         expected_steps: progress.expected_steps,
                         running: running,
-                        delay: delay,
+                        delay: progressDelay,
                         started_at: startedAt
                     });
                     this.renderFrames(progress.results, progress.best);
                 } else if (running) {
-                    const secondsLeft = this.secondsToNext(delay, startedAt, 0);
+                    const secondsLeft = this.secondsToNext(progressDelay, startedAt, 0);
                     this.elements.autofocusResults.innerHTML = `
                         <p class="message-info">Захвачено кадров: 0 из ${progress.expected_steps}</p>
                     `;

@@ -181,9 +181,10 @@ def run_autofocus():
         autofocus_status['total_steps'] = num_steps
         autofocus_status['started_at'] = time.time()
 
+        autofocus.clear()
+
         def worker():
             try:
-                autofocus.clear()
                 autofocus.capture_series(num_steps, step_size)
             except Exception as e:
                 logger.error(f"Error in autofocus worker: {e}", exc_info=True)
@@ -194,7 +195,8 @@ def run_autofocus():
 
         return jsonify({
             'status': 'started',
-            'total_steps': int(num_steps)
+            'total_steps': int(num_steps),
+            'delay': int(autofocus_status['delay'])
         })
 
     except Exception as e:
