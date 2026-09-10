@@ -54,7 +54,7 @@ class StreamUI {
     async applyThreshold() {
         try {
             this.elements.applyThresholdBtn.disabled = true;
-            this.elements.applyThresholdBtn.textContent = 'Applying...';
+            this.elements.applyThresholdBtn.textContent = 'Применение...';
 
             const baseThreshold = parseFloat(this.elements.baseThreshold.value);
             const sensitivity = parseFloat(this.elements.sensitivity.value);
@@ -74,54 +74,54 @@ class StreamUI {
                 this.elements.baseThresholdDisplay.textContent = baseThreshold.toFixed(0);
                 console.log('Threshold updated:', data);
             } else {
-                alert('Failed to update threshold: ' + data.error);
+                alert('Не удалось обновить порог: ' + data.error);
             }
         } catch (error) {
             console.error('Failed to apply threshold:', error);
-            alert('Failed to apply threshold');
+            alert('Не удалось применить порог');
         } finally {
             this.elements.applyThresholdBtn.disabled = false;
-            this.elements.applyThresholdBtn.textContent = 'Apply';
+            this.elements.applyThresholdBtn.textContent = 'Применить';
         }
     }
 
     onModeChanged(autoMode) {
         if (autoMode) {
             this.elements.checkFocusBtn.disabled = true;
-            this.elements.checkFocusBtn.textContent = 'Auto Mode Active';
-            this.elements.statusText.textContent = 'Watching stream...';
+            this.elements.checkFocusBtn.textContent = 'Авторежим активен';
+            this.elements.statusText.textContent = 'Наблюдение за потоком...';
             this.elements.statusIndicator.className = 'status-indicator';
         } else {
             this.elements.checkFocusBtn.disabled = false;
-            this.elements.checkFocusBtn.textContent = 'Check Focus';
-            this.elements.statusText.textContent = 'Press "Check Focus"';
+            this.elements.checkFocusBtn.textContent = 'Проверить фокус';
+            this.elements.statusText.textContent = 'Нажмите «Проверить фокус»';
         }
     }
 
     async checkFocus() {
         try {
             this.elements.checkFocusBtn.disabled = true;
-            this.elements.checkFocusBtn.textContent = 'Checking...';
+            this.elements.checkFocusBtn.textContent = 'Проверка...';
 
             const response = await fetch(`${this.apiUrl}/focus/check`, { method: 'POST' });
             const data = await response.json();
 
             if (data.status === 'success') {
                 this.elements.statusIndicator.className = `status-indicator ${data.is_focused ? 'focused' : 'blurred'}`;
-                this.elements.statusText.textContent = data.is_focused ? 'FOCUSED' : 'BLURRED';
+                this.elements.statusText.textContent = data.is_focused ? 'В ФОКУСЕ' : 'НЕ В ФОКУСЕ';
                 this.elements.variance.textContent = data.variance.toFixed(2);
                 this.elements.threshold.textContent = data.adaptive_threshold.toFixed(2);
 
                 const now = new Date().toLocaleTimeString();
-                this.elements.lastCheckTime.textContent = `Last check: ${now}`;
+                this.elements.lastCheckTime.textContent = `Последняя проверка: ${now}`;
                 this.elements.lastCheckTime.style.color = data.is_focused ? '#4ade80' : '#f87171';
             }
         } catch (error) {
             console.error('Failed to check focus:', error);
-            this.elements.statusText.textContent = 'Connection Error';
+            this.elements.statusText.textContent = 'Ошибка соединения';
         } finally {
             this.elements.checkFocusBtn.disabled = false;
-            this.elements.checkFocusBtn.textContent = 'Check Focus';
+            this.elements.checkFocusBtn.textContent = 'Проверить фокус';
         }
     }
 
@@ -134,7 +134,7 @@ class StreamUI {
                 this.elements.variance.textContent = data.current_variance.toFixed(2);
                 this.elements.threshold.textContent = data.adaptive_threshold.toFixed(2);
                 this.elements.statusIndicator.className = `status-indicator ${data.is_focused ? 'focused' : 'blurred'}`;
-                this.elements.statusText.textContent = data.is_focused ? 'FOCUSED' : 'BLURRED';
+                this.elements.statusText.textContent = data.is_focused ? 'В ФОКУСЕ' : 'НЕ В ФОКУСЕ';
             }
 
             this.elements.avgVariance.textContent = data.avg_variance.toFixed(2);

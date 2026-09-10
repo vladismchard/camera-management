@@ -25,24 +25,24 @@ class StitchUI {
     async checkFocus() {
         try {
             this.elements.checkFocusBtn.disabled = true;
-            this.elements.checkFocusBtn.textContent = 'Checking...';
+            this.elements.checkFocusBtn.textContent = 'Проверка...';
             
             const response = await fetch(`${this.apiUrl}/focus/check`, { method: 'POST' });
             const data = await response.json();
             
             if (data.status === 'success') {
-                const focusStatus = data.is_focused ? 'FOCUSED' : 'BLURRED';
+                const focusStatus = data.is_focused ? 'В ФОКУСЕ' : 'НЕ В ФОКУСЕ';
                 const logType = data.is_focused ? 'success' : 'warning';
                 this.logCapture(
-                    `Focus check: ${focusStatus} | Variance: ${data.variance.toFixed(2)} | Threshold: ${data.adaptive_threshold.toFixed(2)}`,
+                    `Проверка фокуса: ${focusStatus} | Дисперсия: ${data.variance.toFixed(2)} | Порог: ${data.adaptive_threshold.toFixed(2)}`,
                     logType
                 );
             }
         } catch (error) {
-            this.logCapture('Failed to check focus: ' + error.message, 'error');
+            this.logCapture('Не удалось проверить фокус: ' + error.message, 'error');
         } finally {
             this.elements.checkFocusBtn.disabled = false;
-            this.elements.checkFocusBtn.textContent = 'Check Focus';
+            this.elements.checkFocusBtn.textContent = 'Проверить фокус';
         }
     }
 
@@ -67,26 +67,33 @@ class StitchUI {
                 this.elements.imageCount.textContent = data.count;
                 this.elements.stitchBtn.disabled = data.count < 2;
                 this.logCapture(
-                    `Image captured. Variance: ${data.variance.toFixed(2)}`,
+                    `Изображение захвачено. Дисперсия: ${data.variance.toFixed(2)}`,
                     'success'
                 );
             } else if (data.status === 'skipped') {
                 this.logCapture(
-                    `Frame skipped — not focused. Variance: ${data.variance.toFixed(2)}, Threshold: ${data.threshold.toFixed(2)}`,
+                    `Кадр пропущен — не в фокусе. Дисперсия: ${data.variance.toFixed(2)}, Порог: ${data.threshold.toFixed(2)}`,
                     'warning'
                 );
             } else {
-                this.logCapture(`Error: ${data.error}`, 'error');
+                this.logCapture(`Ошибка: ${data.error}`, 'error');
             }
         } catch (error) {
-            this.logCapture('Failed to capture: ' + error.message, 'error');
+            this.logCapture('Не удалось захватить кадр: ' + error.message, 'error');
         }
     }
 
     async stitchImages() {
         this.elements.stitchBtn.disabled = true;
-        this.elements.stitchBtn.textContent = 'Stitching...';
+        this.elements.stitchBtn.textContent = 'Склейка...';
         const method = this.elements.stitchMethod.value;
+
+        const methodNames = {
+            horizontal: 'Горизонтально',
+            vertical: 'Вертикально',
+            grid: 'Сетка',
+            panorama: 'Панорама'
+        };
 
         try {
             const response = await fetch(`${this.apiUrl}/stitch?method=${method}`, { method: 'POST' });
@@ -95,19 +102,19 @@ class StitchUI {
             if (data.status === 'success') {
                 const filename = data.filepath.split('/').pop();
                 this.elements.stitchedResult.innerHTML = `
-                    <img src="${this.apiUrl}/stitched/${filename}?t=${Date.now()}" alt="Stitched Result">
-                    <p class="success-label">Stitched ${data.count} images — ${data.method}</p>
+                    <img src="${this.apiUrl}/stitched/${filename}?t=${Date.now()}" alt="Результат склейки">
+                    <p class="success-label">Склеено изображений: ${data.count} — ${methodNames[data.method] || data.method}</p>
                 `;
             } else {
                 this.elements.stitchedResult.innerHTML =
-                    `<p class="message-error">Error: ${data.error}</p>`;
+                    `<p class="message-error">Ошибка: ${data.error}</p>`;
             }
         } catch (error) {
             this.elements.stitchedResult.innerHTML =
-                `<p class="message-error">Failed to stitch images</p>`;
+                `<p class="message-error">Не удалось склеить изображения</p>`;
         } finally {
             this.elements.stitchBtn.disabled = false;
-            this.elements.stitchBtn.textContent = 'Stitch Images';
+            this.elements.stitchBtn.textContent = 'Склеить изображения';
         }
     }
 
@@ -119,8 +126,8 @@ class StitchUI {
                 this.elements.imageCount.textContent = data.count;
                 this.elements.stitchBtn.disabled = true;
                 this.elements.stitchedResult.innerHTML =
-                    '<p class="message-empty">Cleared all images</p>';
-                this.logCapture('All images cleared', 'info');
+                    '<p class="message-empty">Все изображения очищены</p>';
+                this.logCapture('Все изображения очищены', 'info');
             }
         } catch (error) {
             console.error('Failed to clear:', error);

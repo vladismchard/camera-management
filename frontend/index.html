@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welding Focus Detector — Stream</title>
+    <title>Детектор фокуса сварки — Поток</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -16,67 +16,67 @@
                     <path d="M 12 5.5 L 12 18.5 M 5.5 12 L 18.5 12"/>
                 </svg>
                 <div class="brand-text">
-                    <h1>Welding Focus Detection</h1>
-                    <p class="subtitle">Machine Vision Control Station</p>
+                    <h1>Контроль фокуса сварки</h1>
+                    <p class="subtitle">Станция управления машинным зрением</p>
                 </div>
             </div>
             <nav class="navbar">
-                <a href="index.html" class="nav-link active">Stream</a>
-                <a href="autofocus.html" class="nav-link">Autofocus</a>
-                <a href="stitch.html" class="nav-link">Stitch</a>
+                <a href="index.html" class="nav-link active">Поток</a>
+                <a href="autofocus.html" class="nav-link">Автофокус</a>
+                <a href="stitch.html" class="nav-link">Склейка</a>
             </nav>
         </header>
 
         <main class="stream-main">
             <div class="video-section">
-                <img id="stream" alt="Camera Stream">
+                <img id="stream" alt="Поток с камеры">
             </div>
 
             <div class="metrics-section">
                 <div class="status-card">
-                    <h2>Manual Focus Check</h2>
-                    <button id="checkFocusBtn" class="btn btn-info focus-check-btn">Check Focus</button>
+                    <h2>Ручная проверка фокуса</h2>
+                    <button id="checkFocusBtn" class="btn btn-info focus-check-btn">Проверить фокус</button>
                     <div class="status-indicator" id="statusIndicator"></div>
-                    <p class="status-text" id="statusText">Press "Check Focus"</p>
+                    <p class="status-text" id="statusText">Нажмите «Проверить фокус»</p>
                     <p id="lastCheckTime" class="last-check-time"></p>
                 </div>
 
                 <div class="metrics-card">
-                    <h2>Focus Threshold Settings</h2>
+                    <h2>Настройки порога фокуса</h2>
                     <div class="threshold-controls">
                         <div class="control-group">
-                            <label for="baseThreshold">Base Threshold:</label>
+                            <label for="baseThreshold">Базовый порог:</label>
                             <input type="number" id="baseThreshold" value="100" min="0" max="500" step="10">
                         </div>
                         <div class="control-group">
-                            <label for="sensitivity">Sensitivity:</label>
+                            <label for="sensitivity">Чувствительность:</label>
                             <input type="range" id="sensitivity" value="0.7" min="0.1" max="1.5" step="0.05">
                             <span id="sensitivityValue">0.7</span>
                         </div>
-                        <button id="applyThresholdBtn" class="btn btn-primary">Apply</button>
+                        <button id="applyThresholdBtn" class="btn btn-primary">Применить</button>
                     </div>
                 </div>
 
                 <div class="metrics-card">
-                    <h2>Focus Metrics</h2>
+                    <h2>Метрики фокуса</h2>
                     <div class="metric">
-                        <span class="metric-label">Variance:</span>
+                        <span class="metric-label">Дисперсия:</span>
                         <span class="metric-value" id="variance">—</span>
                     </div>
                     <div class="metric">
-                        <span class="metric-label">Adaptive Threshold:</span>
+                        <span class="metric-label">Адаптивный порог:</span>
                         <span class="metric-value" id="threshold">—</span>
                     </div>
                     <div class="metric">
-                        <span class="metric-label">Base Threshold:</span>
+                        <span class="metric-label">Базовый порог:</span>
                         <span class="metric-value" id="baseThresholdDisplay">100</span>
                     </div>
                     <div class="metric">
-                        <span class="metric-label">Avg Variance:</span>
+                        <span class="metric-label">Средняя дисперсия:</span>
                         <span class="metric-value" id="avgVariance">—</span>
                     </div>
                     <div class="metric">
-                        <span class="metric-label">History Size:</span>
+                        <span class="metric-label">Размер истории:</span>
                         <span class="metric-value" id="historySize">—</span>
                     </div>
                 </div>

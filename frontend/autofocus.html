@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welding Focus Detector — Autofocus</title>
+    <title>Детектор фокуса сварки — Автофокус</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -16,45 +16,45 @@
                     <path d="M 12 5.5 L 12 18.5 M 5.5 12 L 18.5 12"/>
                 </svg>
                 <div class="brand-text">
-                    <h1>Welding Focus Detection</h1>
-                    <p class="subtitle">Machine Vision Control Station</p>
+                    <h1>Контроль фокуса сварки</h1>
+                    <p class="subtitle">Станция управления машинным зрением</p>
                 </div>
             </div>
             <nav class="navbar">
-                <a href="index.html" class="nav-link">Stream</a>
-                <a href="autofocus.html" class="nav-link active">Autofocus</a>
-                <a href="stitch.html" class="nav-link">Stitch</a>
+                <a href="index.html" class="nav-link">Поток</a>
+                <a href="autofocus.html" class="nav-link active">Автофокус</a>
+                <a href="stitch.html" class="nav-link">Склейка</a>
             </nav>
         </header>
 
         <main class="autofocus-main">
             <div class="af-controls-section">
                 <div class="card">
-                    <h2>Autofocus Scan</h2>
+                    <h2>Сканирование автофокуса</h2>
                     <div class="input-group">
-                        <label for="numSteps">Steps:</label>
+                        <label for="numSteps">Шаги:</label>
                         <input type="number" id="numSteps" value="5" min="3" max="15">
                     </div>
                     <div class="input-group">
-                        <label for="stepSize">Step Size:</label>
+                        <label for="stepSize">Размер шага:</label>
                         <input type="number" id="stepSize" value="1" min="1" max="5">
                     </div>
-                    <button id="autofocusBtn" class="btn btn-primary">Run Autofocus</button>
+                    <button id="autofocusBtn" class="btn btn-primary">Запустить автофокус</button>
                 </div>
 
                 <div class="card">
-                    <h2>Results</h2>
+                    <h2>Результаты</h2>
                     <div id="autofocusResults">
-                        <p class="message-empty">Run autofocus scan to see results</p>
+                        <p class="message-empty">Запустите сканирование автофокуса, чтобы увидеть результаты</p>
                     </div>
                 </div>
             </div>
 
             <div class="af-frames-section">
                 <div class="card">
-                    <h2>Best Focused Frame</h2>
+                    <h2>Лучший кадр в фокусе</h2>
                     <div id="autofocusImage">
-                        <p class="message-empty">No frame captured yet</p>
+                        <p class="message-empty">Кадр ещё не захвачен</p>
                     </div>
                 </div>
             </div>

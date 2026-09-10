@@ -108,7 +108,7 @@ def generate_frames():
 @app.route('/stream')
 def stream():
     if camera is None:
-        return jsonify({'error': 'Camera not available'}), 503
+        return jsonify({'error': 'Камера недоступна'}), 503
     return Response(
         generate_frames(),
         mimetype='multipart/x-mixed-replace; boundary=frame'
@@ -118,7 +118,7 @@ def stream():
 @app.route('/metrics')
 def metrics():
     if detector is None:
-        return jsonify({'error': 'Detector not available'}), 503
+        return jsonify({'error': 'Детектор недоступен'}), 503
     return jsonify(detector.get_metrics())
 
 
@@ -126,12 +126,12 @@ def metrics():
 def capture():
     logger.info("Capture endpoint called")
     if camera is None:
-        return jsonify({'error': 'Camera not available'}), 503
+        return jsonify({'error': 'Камера недоступна'}), 503
 
     try:
         frame = camera.capture_single()
         if frame is None:
-            return jsonify({'error': 'Failed to capture frame'}), 500
+            return jsonify({'error': 'Не удалось захватить кадр'}), 500
 
         focus_info = detector.check_focus(frame)
 
@@ -164,7 +164,7 @@ def capture():
 def run_autofocus():
     logger.info("Autofocus endpoint called")
     if autofocus is None:
-        return jsonify({'error': 'Autofocus not available'}), 503
+        return jsonify({'error': 'Автофокус недоступен'}), 503
 
     try:
         data = request.get_json() or {}
@@ -175,7 +175,7 @@ def run_autofocus():
         best = autofocus.capture_series(num_steps, step_size)
 
         if best is None:
-            return jsonify({'error': 'Autofocus failed'}), 500
+            return jsonify({'error': 'Ошибка автофокуса'}), 500
 
         results = autofocus.get_results()
         best_info = autofocus.get_best_result()
@@ -195,11 +195,11 @@ def run_autofocus():
 @app.route('/autofocus/frame/<int:step>')
 def get_autofocus_frame(step):
     if autofocus is None:
-        return jsonify({'error': 'Autofocus not available'}), 503
+        return jsonify({'error': 'Автофокус недоступен'}), 503
 
     frame = autofocus.get_frame_by_step(step)
     if frame is None:
-        return jsonify({'error': f'No frame for step {step}'}), 404
+        return jsonify({'error': f'Нет кадра для шага {step}'}), 404
 
     _, buffer = camera.encode_frame(frame)
     return Response(buffer.tobytes(), mimetype='image/jpeg')
@@ -208,11 +208,11 @@ def get_autofocus_frame(step):
 @app.route('/autofocus/best-frame')
 def get_best_frame():
     if autofocus is None:
-        return jsonify({'error': 'Autofocus not available'}), 503
+        return jsonify({'error': 'Автофокус недоступен'}), 503
 
     frame = autofocus.get_best_frame()
     if frame is None:
-        return jsonify({'error': 'No autofocus results available'}), 404
+        return jsonify({'error': 'Нет результатов автофокуса'}), 404
 
     _, buffer = camera.encode_frame(frame)
     return Response(buffer.tobytes(), mimetype='image/jpeg')
@@ -222,7 +222,7 @@ def get_best_frame():
 def stitch():
     count = stitcher.get_count()
     if count < 2:
-        return jsonify({'error': f'Need at least 2 images, have {count}'}), 400
+        return jsonify({'error': f'Нужно минимум 2 изображения, сейчас {count}'}), 400
 
     method = request.args.get('method', 'horizontal')
     stitched, result = stitcher.stitch(method=method)
@@ -253,7 +253,7 @@ def get_stitched(filename):
     filepath = os.path.join('stitched', filename)
     if os.path.exists(filepath):
         return send_file(filepath, mimetype='image/jpeg')
-    return jsonify({'error': 'File not found'}), 404
+    return jsonify({'error': 'Файл не найден'}), 404
 
 
 @app.route('/health')
@@ -297,12 +297,12 @@ def set_focus_mode():
 def check_focus_manual():
     """Ручная проверка фокуса без обновления истории стрима"""
     if camera is None:
-        return jsonify({'error': 'Camera not available'}), 503
+        return jsonify({'error': 'Камера недоступна'}), 503
     
     try:
         frame = camera.capture_single()
         if frame is None:
-            return jsonify({'error': 'Failed to capture frame'}), 500
+            return jsonify({'error': 'Не удалось захватить кадр'}), 500
         
         focus_info = detector.check_focus(frame)
         
@@ -319,7 +319,7 @@ def check_focus_manual():
 def get_threshold():
     """Получить текущие настройки порога"""
     if detector is None:
-        return jsonify({'error': 'Detector not available'}), 503
+        return jsonify({'error': 'Детектор недоступен'}), 503
     
     config = detector.get_threshold_config()
     return jsonify({
@@ -332,7 +332,7 @@ def get_threshold():
 def set_threshold():
     """Установить новые настройки порога"""
     if detector is None:
-        return jsonify({'error': 'Detector not available'}), 503
+        return jsonify({'error': 'Детектор недоступен'}), 503
     
     try:
         data = request.get_json()
@@ -341,9 +341,9 @@ def set_threshold():
         
         # Валидация
         if base_threshold < 0:
-            return jsonify({'error': 'base_threshold must be >= 0'}), 400
+            return jsonify({'error': 'Базовый порог должен быть >= 0'}), 400
         if not (0.1 <= sensitivity <= 1.5):
-            return jsonify({'error': 'sensitivity must be between 0.1 and 1.5'}), 400
+            return jsonify({'error': 'Чувствительность должна быть в диапазоне 0.1–1.5'}), 400
         
         detector.set_threshold(base_threshold, sensitivity)
         

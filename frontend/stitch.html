@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welding Focus Detector — Stitch</title>
+    <title>Детектор фокуса сварки — Склейка</title>
     <link rel="stylesheet" href="style.css">
     <script src="focus-mode-toggle.js"></script>
 </head>
@@ -18,50 +18,50 @@
                     <path d="M 12 5.5 L 12 18.5 M 5.5 12 L 18.5 12"/>
                 </svg>
                 <div class="brand-text">
-                    <h1>Welding Focus Detection</h1>
-                    <p class="subtitle">Machine Vision Control Station</p>
+                    <h1>Контроль фокуса сварки</h1>
+                    <p class="subtitle">Станция управления машинным зрением</p>
                 </div>
             </div>
             <nav class="navbar">
-                <a href="index.html" class="nav-link">Stream</a>
-                <a href="autofocus.html" class="nav-link">Autofocus</a>
-                <a href="stitch.html" class="nav-link active">Stitch</a>
-                <button id="checkFocusBtn" class="btn btn-info focus-check-btn">Check Focus</button>
+                <a href="index.html" class="nav-link">Поток</a>
+                <a href="autofocus.html" class="nav-link">Автофокус</a>
+                <a href="stitch.html" class="nav-link active">Склейка</a>
+                <button id="checkFocusBtn" class="btn btn-info focus-check-btn">Проверить фокус</button>
             </nav>
         </header>
 
         <main class="stitch-main">
             <div class="stitch-controls-section">
                 <div class="card">
-                    <h2>Capture</h2>
+                    <h2>Захват</h2>
                     <div class="stitch-preview">
-                        <img id="stream" alt="Camera Stream">
+                        <img id="stream" alt="Поток с камеры">
                     </div>
                     <div class="controls">
-                        <button id="captureBtn" class="btn btn-primary">Capture Image</button>
+                        <button id="captureBtn" class="btn btn-primary">Захватить изображение</button>
                         <select id="stitchMethod" class="select">
-                            <option value="horizontal">Horizontal</option>
-                            <option value="vertical">Vertical</option>
-                            <option value="grid">Grid</option>
-                            <option value="panorama">Panorama (auto)</option>
+                            <option value="horizontal">Горизонтально</option>
+                            <option value="vertical">Вертикально</option>
+                            <option value="grid">Сетка</option>
+                            <option value="panorama">Панорама (авто)</option>
                         </select>
-                        <button id="stitchBtn" class="btn btn-success" disabled>Stitch Images</button>
-                        <button id="clearBtn" class="btn btn-danger">Clear All</button>
-                        <span class="counter">Images: <span id="imageCount">0</span></span>
+                        <button id="stitchBtn" class="btn btn-success" disabled>Склеить изображения</button>
+                        <button id="clearBtn" class="btn btn-danger">Очистить всё</button>
+                        <span class="counter">Изображения: <span id="imageCount">0</span></span>
                     </div>
                 </div>
 
                 <div class="card">
-                    <h2>Capture Log</h2>
+                    <h2>Журнал захвата</h2>
                     <div id="captureLog" class="capture-log"></div>
                 </div>
             </div>
 
             <div class="stitch-result-section">
                 <div class="card">
-                    <h2>Stitched Result</h2>
+                    <h2>Результат склейки</h2>
                     <div id="stitchedResult">
-                        <p class="message-empty">Capture at least 2 focused images and stitch</p>
+                        <p class="message-empty">Захватите минимум 2 изображения в фокусе и склейте их</p>
                     </div>
                 </div>
             </div>
