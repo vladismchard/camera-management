@@ -6,11 +6,11 @@ import logging
 logger = logging.getLogger(__name__)
 
 class FocusDetector:
-    def __init__(self, base_threshold=100.0, sensitivity=0.7):
+    def __init__(self, base_threshold=100.0, sensitivity=1.0):
         """
         Args:
             base_threshold: Базовый порог variance для определения фокуса
-            sensitivity: Множитель для адаптивного порога (0.5-1.0)
+            sensitivity: Множитель для адаптивного порога (0.1-1.5, 1.0 = 100%)
         """
         self.base_threshold = base_threshold
         self.sensitivity = sensitivity

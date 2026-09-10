@@ -7,13 +7,14 @@ from image_stitcher import ImageStitcher
 from autofocus import AutoFocus
 import logging
 import threading
+import time
 import cv2
 import os
 import json
 import numpy as np
 
 auto_focus_mode = False
-autofocus_status = {'running': False, 'total_steps': 0}
+autofocus_status = {'running': False, 'total_steps': 0, 'delay': 5, 'started_at': None}
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -178,6 +179,7 @@ def run_autofocus():
 
         autofocus_status['running'] = True
         autofocus_status['total_steps'] = num_steps
+        autofocus_status['started_at'] = time.time()
 
         def worker():
             try:
@@ -215,7 +217,9 @@ def autofocus_progress():
         'results': results,
         'best': best,
         'total_steps': int(len(results)),
-        'expected_steps': int(autofocus_status['total_steps'])
+        'expected_steps': int(autofocus_status['total_steps']),
+        'delay': int(autofocus_status['delay']),
+        'started_at': autofocus_status['started_at']
     })
 
 
@@ -364,7 +368,7 @@ def set_threshold():
     try:
         data = request.get_json()
         base_threshold = float(data.get('base_threshold', 100.0))
-        sensitivity = float(data.get('sensitivity', 0.7))
+        sensitivity = float(data.get('sensitivity', 1.0))
         
         # Валидация
         if base_threshold < 0:

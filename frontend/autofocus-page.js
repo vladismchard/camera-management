@@ -73,6 +73,7 @@ class AutofocusPageUI {
             }
 
             this.scanId = new Date().getTime();
+            this.elements.autofocusResults.innerHTML = '<p class="message-info">Сканирование запущено. Интервал между кадрами: 5 секунд</p>';
 
             let running = true;
             while (running) {
@@ -81,15 +82,28 @@ class AutofocusPageUI {
                 if (progress === null) break;
                 running = progress.running;
 
+                const delay = progress.delay || 5;
+                const startedAt = progress.started_at || 0;
+
                 if (progress.results.length > 0) {
                     this.displayAutofocusResults({
                         results: progress.results,
                         best: progress.best,
                         total_steps: progress.results.length,
                         expected_steps: progress.expected_steps,
-                        running: running
+                        running: running,
+                        delay: delay,
+                        started_at: startedAt
                     });
                     this.renderFrames(progress.results, progress.best);
+                } else if (running) {
+                    const secondsLeft = this.secondsToNext(delay, startedAt, 0);
+                    this.elements.autofocusResults.innerHTML = `
+                        <p class="message-info">Захвачено кадров: 0 из ${progress.expected_steps}</p>
+                    `;
+                    this.elements.autofocusImage.innerHTML = `
+                        <p class="message-info">Ожидание первого кадра... Через ~${secondsLeft} сек.</p>
+                    `;
                 } else if (!running) {
                     this.elements.autofocusImage.innerHTML = `
                         <p class="message-error">Не удалось захватить кадры</p>
@@ -120,12 +134,20 @@ class AutofocusPageUI {
         }
     }
 
+    secondsToNext(delay, startedAt, numResults) {
+        if (!startedAt) return delay;
+        const elapsed = (Date.now() / 1000) - startedAt;
+        const nextAt = (numResults + 1) * delay;
+        return Math.max(0, Math.round(nextAt - elapsed));
+    }
+
     displayAutofocusResults(data) {
-        const { results, best, total_steps, expected_steps, running } = data;
+        const { results, best, total_steps, expected_steps, running, delay, started_at } = data;
 
         let header;
         if (running) {
-            header = `<p class="message-info">Захвачено кадров: ${total_steps} из ${expected_steps}</p>`;
+            const secondsLeft = this.secondsToNext(delay, started_at, results.length);
+            header = `<p class="message-info">Захвачено кадров: ${total_steps} из ${expected_steps} · Следующий кадр через ~${secondsLeft} сек.</p>`;
         } else {
             header = `<p class="message-info">Выполнено шагов: ${total_steps}</p>`;
         }

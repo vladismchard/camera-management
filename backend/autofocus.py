@@ -5,6 +5,8 @@ import time
 logger = logging.getLogger(__name__)
 
 class AutoFocus:
+    CAPTURE_DELAY = 5  # секунд между снимками
+
     def __init__(self, camera, focus_detector):
         self.camera = camera
         self.detector = focus_detector
@@ -29,7 +31,7 @@ class AutoFocus:
             z_position = current_z + z_offset
             logger.info(f"Step {idx+1}/{len(positions)}: Z={z_position:+d}")
 
-            time.sleep(1)
+            time.sleep(self.CAPTURE_DELAY)
 
             frame = self.camera.capture_single()
 
