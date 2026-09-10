@@ -21,6 +21,7 @@ class Camera:
             raise RuntimeError(f"Cannot open camera device {self.device}")
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
         self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+        self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
     
     def capture_stream(self):
         while True:
@@ -29,6 +30,9 @@ class Camera:
                 yield frame
     
     def capture_single(self):
+        for _ in range(5):
+            self.cap.grab()
+            
         success, frame = self.cap.read()
         return frame if success else None
     
