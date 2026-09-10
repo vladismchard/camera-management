@@ -671,6 +671,60 @@ header::before {
     background: #05070a;
 }
 
+.af-frames-label {
+    margin: 14px 0 10px;
+    color: var(--text-muted);
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.af-frames-label:first-of-type {
+    margin: 0 0 10px;
+}
+
+.af-best-frame {
+    border: 2px solid var(--success);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    background: #05070a;
+}
+
+.af-best-frame img,
+.af-frame img {
+    width: 100%;
+    display: block;
+    border-radius: 0;
+    border: none;
+}
+
+.af-frame {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    background: #05070a;
+}
+
+.af-frame-caption {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 5px 10px;
+    font-size: 0.72rem;
+    font-family: var(--font-mono);
+    color: var(--text-muted);
+    background: rgba(5, 7, 10, 0.6);
+}
+
+.af-frame-caption span:nth-child(2) {
+    color: #4f8cff;
+}
+
+.af-frame-caption span:nth-child(4) {
+    color: var(--success);
+}
+
 .frames-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));

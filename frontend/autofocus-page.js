@@ -43,7 +43,7 @@ class AutofocusPageUI {
 
             if (data.status === 'success') {
                 this.displayAutofocusResults(data);
-                this.loadBestFrame();
+                this.loadAllFrames(data.results, data.best);
             } else {
                 this.elements.autofocusResults.innerHTML = `
                     <p class="message-error">Ошибка: ${data.error || 'Неизвестная ошибка'}</p>
@@ -103,21 +103,62 @@ class AutofocusPageUI {
         this.elements.autofocusResults.innerHTML = html;
     }
 
-    async loadBestFrame() {
+    async loadAllFrames(results, best) {
         try {
             const timestamp = new Date().getTime();
-            this.elements.autofocusImage.innerHTML = `
-                <img src="${this.apiUrl}/autofocus/best-frame?t=${timestamp}" 
-                     alt="Лучший кадр в фокусе" 
-                     style="width: 100%; border-radius: 4px; border: 1px solid #1e1e1e;">
-                <p style="text-align: center; margin-top: 12px; color: #2ecc8f; font-weight: 600; font-size: 0.85em; text-transform: uppercase; letter-spacing: 0.05em;">
-                    Лучшее изображение в фокусе
-                </p>
+            const bestStep = best ? best.step : null;
+
+            const sorted = [...results].sort((a, b) => {
+                if (a.step === bestStep) return -1;
+                if (b.step === bestStep) return 1;
+                return a.step - b.step;
+            });
+
+            let html = '';
+
+            html += `
+                <p class="af-frames-label">ЛУЧШИЙ КАДР</p>
+                <div class="af-best-frame">
+                    <div class="af-frame-caption">
+                        <span>Шаг ${best.step}</span>
+                        <span>Z ${best.z_offset >= 0 ? '+' : ''}${best.z_offset}</span>
+                        <span>Дисперсия: ${best.variance.toFixed(2)}</span>
+                        <span>${best.is_focused ? 'В ФОКУСЕ' : 'НЕ В ФОКУСЕ'}</span>
+                    </div>
+                    <img src="${this.apiUrl}/autofocus/frame/${best.step}?t=${timestamp}" 
+                         alt="Лучший кадр (шаг ${best.step})">
+                </div>
             `;
+
+            const others = sorted.filter((r) => r.step !== bestStep);
+
+            if (others.length > 0) {
+                html += `<p class="af-frames-label">ВСЕ КАДРЫ</p>`;
+                html += `<div class="frames-grid">`;
+
+                others.forEach((result) => {
+                    html += `
+                        <div class="af-frame">
+                            <div class="af-frame-caption">
+                                <span>Шаг ${result.step}</span>
+                                <span>Z ${result.z_offset >= 0 ? '+' : ''}${result.z_offset}</span>
+                                <span>Дисперсия: ${result.variance.toFixed(2)}</span>
+                                <span>${result.is_focused ? 'В ФОКУСЕ' : 'НЕ В ФОКУСЕ'}</span>
+                            </div>
+                            <img src="${this.apiUrl}/autofocus/frame/${result.step}?t=${timestamp}" 
+                                 alt="Кадр шага ${result.step}">
+                        </div>
+                    `;
+                });
+
+                html += `</div>`;
+            }
+
+            this.elements.autofocusImage.innerHTML = html;
         } catch (error) {
-            console.error('Failed to load best frame:', error);
+            console.error('Failed to load frames:', error);
             this.elements.autofocusImage.innerHTML = `
-                <p class="message-error">Не удалось загрузить изображение</p>
+                <p class="message-error">Не удалось загрузить изображения</p>
             `;
         }
     }
