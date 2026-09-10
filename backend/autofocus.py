@@ -29,7 +29,7 @@ class AutoFocus:
             z_position = current_z + z_offset
             logger.info(f"Step {idx+1}/{len(positions)}: Z={z_position:+d}")
 
-            time.sleep(0.5)
+            time.sleep(1)
 
             frame = self.camera.capture_single()
 

@@ -6,12 +6,14 @@ from focus_detector import FocusDetector
 from image_stitcher import ImageStitcher
 from autofocus import AutoFocus
 import logging
+import threading
 import cv2
 import os
 import json
 import numpy as np
 
 auto_focus_mode = False
+autofocus_status = {'running': False, 'total_steps': 0}
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -166,30 +168,55 @@ def run_autofocus():
     if autofocus is None:
         return jsonify({'error': 'Автофокус недоступен'}), 503
 
+    if autofocus_status['running']:
+        return jsonify({'error': 'Автофокус уже выполняется'}), 409
+
     try:
         data = request.get_json() or {}
         num_steps = int(data.get('num_steps', 3))
         step_size = int(data.get('step_size', 1))
 
-        autofocus.clear()
-        best = autofocus.capture_series(num_steps, step_size)
+        autofocus_status['running'] = True
+        autofocus_status['total_steps'] = num_steps
 
-        if best is None:
-            return jsonify({'error': 'Ошибка автофокуса'}), 500
+        def worker():
+            try:
+                autofocus.clear()
+                autofocus.capture_series(num_steps, step_size)
+            except Exception as e:
+                logger.error(f"Error in autofocus worker: {e}", exc_info=True)
+            finally:
+                autofocus_status['running'] = False
 
-        results = autofocus.get_results()
-        best_info = autofocus.get_best_result()
+        threading.Thread(target=worker, daemon=True).start()
 
         return jsonify({
-            'status': 'success',
-            'results': results,
-            'best': best_info,
-            'total_steps': int(len(results))
+            'status': 'started',
+            'total_steps': int(num_steps)
         })
 
     except Exception as e:
-        logger.error(f"Error in autofocus: {e}", exc_info=True)
+        logger.error(f"Error starting autofocus: {e}", exc_info=True)
+        autofocus_status['running'] = False
         return jsonify({'error': str(e)}), 500
+
+
+@app.route('/autofocus/progress')
+def autofocus_progress():
+    if autofocus is None:
+        return jsonify({'error': 'Автофокус недоступен'}), 503
+
+    results = autofocus.get_results()
+    best = autofocus.get_best_result()
+
+    return jsonify({
+        'status': 'success',
+        'running': bool(autofocus_status['running']),
+        'results': results,
+        'best': best,
+        'total_steps': int(len(results)),
+        'expected_steps': int(autofocus_status['total_steps'])
+    })
 
 
 @app.route('/autofocus/frame/<int:step>')

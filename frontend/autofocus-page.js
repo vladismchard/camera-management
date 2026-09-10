@@ -7,16 +7,38 @@ class AutofocusPageUI {
             numSteps: document.getElementById('numSteps'),
             stepSize: document.getElementById('stepSize'),
             autofocusResults: document.getElementById('autofocusResults'),
-            autofocusImage: document.getElementById('autofocusImage')
+            autofocusImage: document.getElementById('autofocusImage'),
+            lightbox: document.getElementById('lightbox'),
+            lightboxImg: document.getElementById('lightboxImg'),
+            lightboxCaption: document.getElementById('lightboxCaption'),
+            lightboxClose: document.getElementById('lightboxClose')
         };
 
         this.modeToggle = new FocusModeToggle(this.apiUrl);
         this.elements.autofocusBtn.addEventListener('click', () => this.runAutofocus());
+        this.scanId = new Date().getTime();
+
+        this.elements.lightboxClose.addEventListener('click', () => this.closeLightbox());
+        this.elements.lightbox.addEventListener('click', (e) => {
+            if (e.target === this.elements.lightbox) this.closeLightbox();
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') this.closeLightbox();
+        });
+
+        this.elements.autofocusImage.addEventListener('click', (e) => {
+            const frameEl = e.target.closest('.af-best-frame, .af-frame');
+            if (!frameEl) return;
+            const img = frameEl.querySelector('img');
+            const caption = frameEl.querySelector('.af-frame-caption');
+            this.openLightbox(img.src, caption ? caption.textContent.trim() : '');
+        });
     }
 
     async runAutofocus() {
         this.elements.autofocusBtn.disabled = true;
         this.elements.autofocusBtn.textContent = 'Выполняется...';
+        this.closeLightbox();
 
         const numSteps = parseInt(this.elements.numSteps.value);
         const stepSize = parseInt(this.elements.stepSize.value);
@@ -39,18 +61,40 @@ class AutofocusPageUI {
             });
 
             const data = await response.json();
-            console.log('Autofocus response:', data);
 
-            if (data.status === 'success') {
-                this.displayAutofocusResults(data);
-                this.loadAllFrames(data.results, data.best);
-            } else {
+            if (data.status !== 'started') {
                 this.elements.autofocusResults.innerHTML = `
                     <p class="message-error">Ошибка: ${data.error || 'Неизвестная ошибка'}</p>
                 `;
                 this.elements.autofocusImage.innerHTML = `
                     <p class="message-error">Не удалось захватить кадры</p>
                 `;
+                return;
+            }
+
+            this.scanId = new Date().getTime();
+
+            let running = true;
+            while (running) {
+                await new Promise((r) => setTimeout(r, 500));
+                const progress = await this.fetchProgress();
+                if (progress === null) break;
+                running = progress.running;
+
+                if (progress.results.length > 0) {
+                    this.displayAutofocusResults({
+                        results: progress.results,
+                        best: progress.best,
+                        total_steps: progress.results.length,
+                        expected_steps: progress.expected_steps,
+                        running: running
+                    });
+                    this.renderFrames(progress.results, progress.best);
+                } else if (!running) {
+                    this.elements.autofocusImage.innerHTML = `
+                        <p class="message-error">Не удалось захватить кадры</p>
+                    `;
+                }
             }
         } catch (error) {
             console.error('Autofocus failed:', error);
@@ -66,10 +110,27 @@ class AutofocusPageUI {
         }
     }
 
-    displayAutofocusResults(data) {
-        const { results, best, total_steps } = data;
+    async fetchProgress() {
+        try {
+            const response = await fetch(`${this.apiUrl}/autofocus/progress`);
+            return await response.json();
+        } catch (error) {
+            console.error('Failed to fetch autofocus progress:', error);
+            return null;
+        }
+    }
 
-        let html = `<p class="message-info">Выполнено шагов: ${total_steps}</p>`;
+    displayAutofocusResults(data) {
+        const { results, best, total_steps, expected_steps, running } = data;
+
+        let header;
+        if (running) {
+            header = `<p class="message-info">Захвачено кадров: ${total_steps} из ${expected_steps}</p>`;
+        } else {
+            header = `<p class="message-info">Выполнено шагов: ${total_steps}</p>`;
+        }
+
+        let html = header;
 
         results.forEach((result) => {
             const isBest = result.step === best.step;
@@ -103,64 +164,73 @@ class AutofocusPageUI {
         this.elements.autofocusResults.innerHTML = html;
     }
 
-    async loadAllFrames(results, best) {
-        try {
-            const timestamp = new Date().getTime();
-            const bestStep = best ? best.step : null;
+    renderFrames(results, best) {
+        const timestamp = this.scanId;
+        const bestStep = best ? best.step : results.reduce((acc, r) => (r.variance > acc.variance ? r : acc), results[0]).step;
 
-            const sorted = [...results].sort((a, b) => {
-                if (a.step === bestStep) return -1;
-                if (b.step === bestStep) return 1;
-                return a.step - b.step;
+        const sorted = [...results].sort((a, b) => {
+            if (a.step === bestStep) return -1;
+            if (b.step === bestStep) return 1;
+            return a.step - b.step;
+        });
+
+        const bestFrame = sorted.find((r) => r.step === bestStep);
+
+        let html = '';
+
+        html += `<p class="af-frames-label">ЛУЧШИЙ КАДР</p>`;
+        html += `
+            <div class="af-best-frame">
+                <div class="af-frame-caption">
+                    <span>Шаг ${bestFrame.step}</span>
+                    <span>Z ${bestFrame.z_offset >= 0 ? '+' : ''}${bestFrame.z_offset}</span>
+                    <span>Дисперсия: ${bestFrame.variance.toFixed(2)}</span>
+                    <span>${bestFrame.is_focused ? 'В ФОКУСЕ' : 'НЕ В ФОКУСЕ'}</span>
+                </div>
+                <img src="${this.apiUrl}/autofocus/frame/${bestFrame.step}?t=${timestamp}" 
+                     alt="Лучший кадр (шаг ${bestFrame.step})">
+            </div>
+        `;
+
+        const others = sorted.filter((r) => r.step !== bestStep);
+
+        if (others.length > 0) {
+            html += `<p class="af-frames-label">ВСЕ КАДРЫ</p>`;
+            html += `<div class="frames-grid">`;
+
+            others.forEach((result) => {
+                html += `
+                    <div class="af-frame">
+                        <div class="af-frame-caption">
+                            <span>Шаг ${result.step}</span>
+                            <span>Z ${result.z_offset >= 0 ? '+' : ''}${result.z_offset}</span>
+                            <span>Дисперсия: ${result.variance.toFixed(2)}</span>
+                            <span>${result.is_focused ? 'В ФОКУСЕ' : 'НЕ В ФОКУСЕ'}</span>
+                        </div>
+                        <img src="${this.apiUrl}/autofocus/frame/${result.step}?t=${timestamp}" 
+                             alt="Кадр шага ${result.step}">
+                    </div>
+                `;
             });
 
-            let html = '';
-
-            html += `
-                <p class="af-frames-label">ЛУЧШИЙ КАДР</p>
-                <div class="af-best-frame">
-                    <div class="af-frame-caption">
-                        <span>Шаг ${best.step}</span>
-                        <span>Z ${best.z_offset >= 0 ? '+' : ''}${best.z_offset}</span>
-                        <span>Дисперсия: ${best.variance.toFixed(2)}</span>
-                        <span>${best.is_focused ? 'В ФОКУСЕ' : 'НЕ В ФОКУСЕ'}</span>
-                    </div>
-                    <img src="${this.apiUrl}/autofocus/frame/${best.step}?t=${timestamp}" 
-                         alt="Лучший кадр (шаг ${best.step})">
-                </div>
-            `;
-
-            const others = sorted.filter((r) => r.step !== bestStep);
-
-            if (others.length > 0) {
-                html += `<p class="af-frames-label">ВСЕ КАДРЫ</p>`;
-                html += `<div class="frames-grid">`;
-
-                others.forEach((result) => {
-                    html += `
-                        <div class="af-frame">
-                            <div class="af-frame-caption">
-                                <span>Шаг ${result.step}</span>
-                                <span>Z ${result.z_offset >= 0 ? '+' : ''}${result.z_offset}</span>
-                                <span>Дисперсия: ${result.variance.toFixed(2)}</span>
-                                <span>${result.is_focused ? 'В ФОКУСЕ' : 'НЕ В ФОКУСЕ'}</span>
-                            </div>
-                            <img src="${this.apiUrl}/autofocus/frame/${result.step}?t=${timestamp}" 
-                                 alt="Кадр шага ${result.step}">
-                        </div>
-                    `;
-                });
-
-                html += `</div>`;
-            }
-
-            this.elements.autofocusImage.innerHTML = html;
-        } catch (error) {
-            console.error('Failed to load frames:', error);
-            this.elements.autofocusImage.innerHTML = `
-                <p class="message-error">Не удалось загрузить изображения</p>
-            `;
+            html += `</div>`;
         }
+
+        this.elements.autofocusImage.innerHTML = html;
+    }
+
+    openLightbox(src, caption) {
+        this.elements.lightboxImg.src = src;
+        this.elements.lightboxCaption.textContent = caption;
+        this.elements.lightbox.hidden = false;
+        document.body.style.overflow = 'hidden';
+    }
+
+    closeLightbox() {
+        this.elements.lightbox.hidden = true;
+        this.elements.lightboxImg.src = '';
+        this.elements.lightboxCaption.textContent = '';
+        document.body.style.overflow = '';
     }
 }
 
