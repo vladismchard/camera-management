@@ -370,7 +370,6 @@ def get_threshold():
         **config
     })
 
-
 @app.route('/focus/threshold', methods=['POST'])
 def set_threshold():
     """Установить новые настройки порога"""
@@ -380,13 +379,10 @@ def set_threshold():
     try:
         data = request.get_json()
         base_threshold = float(data.get('base_threshold', 100.0))
-        sensitivity = float(data.get('sensitivity', 1.0))
+        sensitivity = float(data.get('sensitivity', 0.0)) 
         
-        # Валидация
         if base_threshold < 0:
             return jsonify({'error': 'Базовый порог должен быть >= 0'}), 400
-        if not (0.1 <= sensitivity <= 1.5):
-            return jsonify({'error': 'Чувствительность должна быть в диапазоне 0.1–1.5'}), 400
         
         detector.set_threshold(base_threshold, sensitivity)
         

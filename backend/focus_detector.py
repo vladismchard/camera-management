@@ -42,13 +42,15 @@ class FocusDetector:
         """Проверить фокус кадра"""
         variance = self.calculate_variance(frame)
         
-        # Добавляем в историю
+        
         self.variance_history.append(variance)
         if len(self.variance_history) > self.max_history:
             self.variance_history.pop(0)
         
-        # Вычисляем адаптивный порог
-        if len(self.variance_history) >= 5:
+        if self.sensitivity <= 0:
+            adaptive_threshold = self.base_threshold
+        elif len(self.variance_history) >= 5:
+            # АДАПТИВНЫЙ РЕЖИМ
             avg_variance = np.mean(self.variance_history)
             adaptive_threshold = max(self.base_threshold, avg_variance * self.sensitivity)
         else:
