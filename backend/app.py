@@ -310,6 +310,13 @@ def health():
         'image_count': stitcher.get_count() if stitcher else 0
     })
 
+@app.route('/focus/mode', methods=['GET'])
+def get_focus_mode():
+    """Получить текущий режим проверки фокуса"""
+    return jsonify({
+        'status': 'success',
+        'auto_mode': auto_focus_mode
+    })
 
 @app.route('/focus/mode', methods=['POST'])
 def set_focus_mode():
@@ -318,6 +325,8 @@ def set_focus_mode():
     try:
         data = request.get_json()
         auto_focus_mode = data.get('auto_mode', False)
+        
+        # Меняем чувствительность в зависимости от режима
         if detector is not None:
             if auto_focus_mode:
                 detector.set_threshold(detector.base_threshold, sensitivity=1.0)
@@ -333,22 +342,6 @@ def set_focus_mode():
         logger.error(f"Error setting focus mode: {e}")
         return jsonify({'error': str(e)}), 500
 
-
-@app.route('/focus/mode', methods=['POST'])
-def set_focus_mode():
-    """Установить режим проверки фокуса"""
-    global auto_focus_mode
-    try:
-        data = request.get_json()
-        auto_focus_mode = data.get('auto_mode', False)
-        logger.info(f"Focus mode changed to: {'AUTO' if auto_focus_mode else 'MANUAL'}")
-        return jsonify({
-            'status': 'success',
-            'auto_mode': auto_focus_mode
-        })
-    except Exception as e:
-        logger.error(f"Error setting focus mode: {e}")
-        return jsonify({'error': str(e)}), 500
 
 @app.route('/focus/check', methods=['POST'])
 def check_focus_manual():
