@@ -14,7 +14,7 @@ import json
 import numpy as np
 
 auto_focus_mode = False
-autofocus_status = {'running': False, 'total_steps': 0, 'delay': 5, 'started_at': None}
+autofocus_status = {'running': False, 'total_steps': 0, 'delay': AutoFocus.CAPTURE_DELAY, 'started_at': None}
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -112,10 +112,13 @@ def generate_frames():
 def stream():
     if camera is None:
         return jsonify({'error': 'Камера недоступна'}), 503
-    return Response(
+    response = Response(
         generate_frames(),
         mimetype='multipart/x-mixed-replace; boundary=frame'
     )
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    return response
 
 
 @app.route('/metrics')
@@ -180,6 +183,7 @@ def run_autofocus():
         autofocus_status['running'] = True
         autofocus_status['total_steps'] = num_steps
         autofocus_status['started_at'] = time.time()
+        autofocus_status['delay'] = AutoFocus.CAPTURE_DELAY
 
         autofocus.clear()
 
@@ -235,7 +239,10 @@ def get_autofocus_frame(step):
         return jsonify({'error': f'Нет кадра для шага {step}'}), 404
 
     _, buffer = camera.encode_frame(frame)
-    return Response(buffer.tobytes(), mimetype='image/jpeg')
+    response = Response(buffer.tobytes(), mimetype='image/jpeg')
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    return response
 
 
 @app.route('/autofocus/best-frame')
@@ -248,7 +255,10 @@ def get_best_frame():
         return jsonify({'error': 'Нет результатов автофокуса'}), 404
 
     _, buffer = camera.encode_frame(frame)
-    return Response(buffer.tobytes(), mimetype='image/jpeg')
+    response = Response(buffer.tobytes(), mimetype='image/jpeg')
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    return response
 
 
 @app.route('/stitch', methods=['POST'])

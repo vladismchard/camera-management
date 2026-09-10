@@ -74,7 +74,7 @@ class AutofocusPageUI {
 
             this.scanId = new Date().getTime();
             const delay = parseInt(data.delay) || 3;
-            const delayLabel = delay >= 5 ? `5 секунд` : (delay >= 2 ? `${delay} секунды` : `${delay} секунду`);
+            const delayLabel = this.fmtDelay(delay);
             this.elements.autofocusResults.innerHTML = `<p class="message-info">Сканирование запущено. Интервал между кадрами: ${delayLabel}</p>`;
 
             let running = true;
@@ -140,7 +140,18 @@ class AutofocusPageUI {
         if (!startedAt) return delay;
         const elapsed = (Date.now() / 1000) - startedAt;
         const nextAt = (numResults + 1) * delay;
-        return Math.max(0, Math.round(nextAt - elapsed));
+        const left = nextAt - elapsed;
+        return left <= 0 ? 0 : Math.ceil(left);
+    }
+
+    fmtDelay(delay) {
+        const n = delay % 10;
+        if (delay >= 5 && delay <= 20 && (delay % 10 === 1 && delay !== 11)) {
+            return `${delay} секунда`;
+        }
+        if (n === 1 && delay !== 11) return `${delay} секунда`;
+        if (n >= 2 && n <= 4 && !(delay >= 12 && delay <= 14)) return `${delay} секунды`;
+        return `${delay} секунд`;
     }
 
     displayAutofocusResults(data) {

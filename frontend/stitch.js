@@ -89,8 +89,6 @@ class StitchUI {
         const method = this.elements.stitchMethod.value;
 
         const methodNames = {
-            horizontal: 'Горизонтально',
-            vertical: 'Вертикально',
             grid: 'Сетка',
             panorama: 'Панорама'
         };
