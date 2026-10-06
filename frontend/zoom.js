@@ -127,9 +127,13 @@ class ImageZoomPan {
             this.pointY = Math.min(0, Math.max(minY, this.pointY));
         } else {
             // When scale < 1, the image is smaller than the wrapper.
-            // We center it to avoid "jumping" or stick it to 0,0.
-            this.pointX = (ww - iw) / 2;
-            this.pointY = (wh - ih) / 2;
+            // Allow free movement but clamp to keep the image at least partially visible.
+            const minX = -ww; 
+            const minY = -wh;
+            const maxX = ww - iw;
+            const maxY = wh - ih;
+            this.pointX = Math.max(minX, Math.min(maxX, this.pointX));
+            this.pointY = Math.max(minY, Math.min(maxY, this.pointY));
         }
     }
 
