@@ -14,6 +14,7 @@ import json
 import numpy as np
 
 auto_focus_mode = False
+zoom_area = None  # Format: {'x': int, 'y': int, 'w': int, 'h': int} or None
 autofocus_status = {'running': False, 'total_steps': 0, 'delay': AutoFocus.CAPTURE_DELAY, 'started_at': None}
 
 logging.basicConfig(level=logging.INFO)
@@ -91,6 +92,12 @@ def generate_frames():
             if frame is None:
                 continue
             
+            # Если установлена область приближения, обрезаем кадр для стрима
+            if zoom_area:
+                x, y, w, h = zoom_area['x'], zoom_area['y'], zoom_area['w'], zoom_area['h']
+                img_h, img_w = frame.shape[:2]
+                frame = frame[max(0, y):min(y + h, img_h), max(0, x):min(x + w, img_w)]
+
             # Проверяем фокус только если включен auto_mode
             if auto_focus_mode:
                 focus_info = detector.check_focus(frame)
@@ -128,6 +135,34 @@ def metrics():
     return jsonify(detector.get_metrics())
 
 
+@app.route('/set_zoom', methods=['POST'])
+def set_zoom():
+    """Установить область приближения (zoom)"""
+    global zoom_area
+    try:
+        data = request.get_json() or {}
+        # Ожидаем x, y, w, h
+        x = data.get('x')
+        y = data.get('y')
+        w = data.get('w')
+        h = data.get('h')
+        
+        if x is None or y is None or w is None or h is None:
+            return jsonify({'error': 'Необходимы параметры x, y, w, h'}), 400
+            
+        zoom_area = {
+            'x': int(x),
+            'y': int(y),
+            'w': int(w),
+            'h': int(h)
+        }
+        logger.info(f"Zoom area set: {zoom_area}")
+        return jsonify({'status': 'success', 'zoom_area': zoom_area})
+    except Exception as e:
+        logger.error(f"Error setting zoom: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/capture', methods=['POST'])
 def capture():
     logger.info("Capture endpoint called")
@@ -138,6 +173,18 @@ def capture():
         frame = camera.capture_single()
         if frame is None:
             return jsonify({'error': 'Не удалось захватить кадр'}), 500
+
+        # Если установлена область приближения, обрезаем кадр
+        if zoom_area:
+            x, y, w, h = zoom_area['x'], zoom_area['y'], zoom_area['w'], zoom_area['h']
+            # Защита от выхода за границы изображения
+            img_h, img_w = frame.shape[:2]
+            x_end = min(x + w, img_w)
+            y_end = min(y + h, img_h)
+            x_start = max(0, x)
+            y_start = max(0, y)
+            frame = frame[y_start:y_end, x_start:x_end]
+            logger.info(f"Frame cropped to zoom area: {zoom_area}")
 
         focus_info = detector.check_focus(frame)
 
