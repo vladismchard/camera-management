@@ -11,12 +11,16 @@ class ImageZoomPan {
         this.startX = 0;
         this.startY = 0;
 
-        // Таймер для предотвращения спама запросами во Flask
+        // Фиксируем ИСХОДНОЕ разрешение камеры ОДИН РАЗ (чтобы не застрять в кропе бэкенда)
+        // Если при загрузке картинка уже обрезана, ставим стандартные 1280x720 (поменяй, если у тебя 1920x1080)
+        this.baseW = (imageElement.naturalWidth > 300) ? imageElement.naturalWidth : 1280;
+        this.baseH = (imageElement.naturalHeight > 300) ? imageElement.naturalHeight : 720;
+
         this.zoomTimeout = null;
 
         this._wrapImage();
         this._initEvents();
-        console.log('[Zoom] Инициализация успешна');
+        console.log(`[Zoom] Инициализация. Базовое разрешение зафиксировано: ${this.baseW}x${this.baseH}`);
     }
 
     _wrapImage() {
@@ -42,6 +46,7 @@ class ImageZoomPan {
         this.img.style.transformOrigin = '0 0';
         this.img.style.pointerEvents = 'none';
     }
+
     _initEvents() {
         // ── Колесико мыши — зум ──────────────────────────────────────
         this.wrapper.addEventListener('wheel', (e) => {
@@ -54,11 +59,10 @@ class ImageZoomPan {
             const xs = (mouseX - this.pointX) / this.scale;
             const ys = (mouseY - this.pointY) / this.scale;
 
-            // Определяем направление (увеличить или уменьшить)
             const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
             let newScale = this.scale * factor;
 
-            // Жестко не даем отдалить меньше оригинала (1) и приблизить больше (10)
+            // Не даем масштабу стать меньше 1 (оригинал) и больше 10
             newScale = Math.max(1, Math.min(10, newScale));
 
             this.scale = newScale;
@@ -71,7 +75,7 @@ class ImageZoomPan {
 
         // ── Начало перетаскивания ─────────────────────────────────────
         this.wrapper.addEventListener('mousedown', (e) => {
-            if (this.scale <= 1) return; 
+            if (this.scale <= 1) return;
             e.preventDefault();
             this.panning = true;
             this.startX = e.clientX - this.pointX;
@@ -113,7 +117,6 @@ class ImageZoomPan {
         const iw = this.img.clientWidth * this.scale;
         const ih = this.img.clientHeight * this.scale;
  
-        // Так как scale теперь всегда >= 1, расчет упрощается
         const minX = Math.min(0, ww - iw);
         const minY = Math.min(0, wh - ih);
         
@@ -122,11 +125,8 @@ class ImageZoomPan {
     }
 
     _applyTransform() {
-        // Меняем визуально картинку сразу же
         this.img.style.transform = `translate(${this.pointX}px, ${this.pointY}px) scale(${this.scale})`;
         
-        // А вот на бэкенд шлем с задержкой 150мс. 
-        // Если крутим колесико быстро - таймер сбрасывается и запрос уйдет только в конце.
         if (this.zoomTimeout) clearTimeout(this.zoomTimeout);
         this.zoomTimeout = setTimeout(() => {
             this._sendZoomToBackend();
@@ -136,8 +136,10 @@ class ImageZoomPan {
     _sendZoomToBackend() {
         const rect = this.wrapper.getBoundingClientRect();
         
-        const naturalW = this.img.naturalWidth || 1280; 
-        const naturalH = this.img.naturalHeight || 720;
+        // ВАЖНО: используем ЗАФИКСИРОВАННЫЙ размер камеры, а не текущий (обрезанный бэкендом)
+        const naturalW = this.baseW; 
+        const naturalH = this.baseH;
+        
         const domW = this.img.clientWidth;
         const domH = this.img.clientHeight;
 
@@ -151,7 +153,6 @@ class ImageZoomPan {
         let w = (rect.width / this.scale) * scaleFactorX;
         let h = (rect.height / this.scale) * scaleFactorY;
 
-        // Округляем до целых и не даем выйти за рамки исходника
         x = Math.max(0, Math.round(x));
         y = Math.max(0, Math.round(y));
         w = Math.min(naturalW - x, Math.round(w));
@@ -163,7 +164,7 @@ class ImageZoomPan {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ x, y, w, h })
-        }).catch(err => console.error('[Zoom] Ошибка отправки на бэк:', err));
+        }).catch(err => console.error('[Zoom] Ошибка:', err));
     }
 }
 
