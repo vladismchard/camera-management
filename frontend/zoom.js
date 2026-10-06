@@ -136,14 +136,29 @@ class ImageZoomPan {
 
     _sendZoomToBackend() {
         const rect = this.wrapper.getBoundingClientRect();
-        const imgRect = this.img.getBoundingClientRect();
         
-        // Вычисляем область, которая видна в контейнере-обертке
-        // Координаты x, y относительно оригинального изображения (без scale)
-        const x = -this.pointX / this.scale;
-        const y = -this.pointY / this.scale;
-        const w = rect.width / this.scale;
-        const h = rect.height / this.scale;
+        // Натуральный размер изображения (из свойств img или дефолты камеры)
+        const naturalW = this.img.naturalWidth || 1280; 
+        const naturalH = this.img.naturalHeight || 720;
+
+        // Размер изображения в DOM до применения scale (текущий layout размер)
+        const domW = this.img.clientWidth;
+        const domH = this.img.clientHeight;
+
+        // Коэффициент пересчета: 1 пиксель DOM = X пикселей оригинала
+        const scaleFactorX = naturalW / domW;
+        const scaleFactorY = naturalH / domH;
+
+        // Координаты смещения pointX/pointY в CSS-пикселях.
+        //-pointX / scale дает сдвиг относительно левого края картинки в DOM-пикселях.
+        const x = (-this.pointX / this.scale) * scaleFactorX;
+        const y = (-this.pointY / this.scale) * scaleFactorY;
+        
+        // Размер видимой области в DOM-пикселях: rect.width / scale
+        const w = (rect.width / this.scale) * scaleFactorX;
+        const h = (rect.height / this.scale) * scaleFactorY;
+
+        console.log(`Sending zoom to backend: x=${x.toFixed(2)}, y=${y.toFixed(2)}, w=${w.toFixed(2)}, h=${h.toFixed(2)}`);
 
         fetch(`${window.location.protocol}//${window.location.hostname}:5000/set_zoom`, {
             method: 'POST',
@@ -151,6 +166,7 @@ class ImageZoomPan {
             body: JSON.stringify({ x, y, w, h })
         }).catch(err => console.error('Failed to set zoom on backend:', err));
     }
+
 }
 
 // Инициализация при загрузке страницы
