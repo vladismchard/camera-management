@@ -58,7 +58,7 @@ class ImageZoomPan {
             const ys = (mouseY - this.pointY) / this.scale;
 
             const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
-            const newScale = Math.min(10, Math.max(1, this.scale * factor));
+            const newScale = Math.min(10, Math.max(0.1, this.scale * factor));
 
             if (newScale === 1) {
                 // Сброс к исходному состоянию
