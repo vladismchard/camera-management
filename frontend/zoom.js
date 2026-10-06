@@ -1,3 +1,4 @@
+// frontend/zoom.js
 class ImageZoomPan {
     constructor(imageElement) {
         if (!imageElement) return;
@@ -9,17 +10,18 @@ class ImageZoomPan {
         this.panning = false;
         this.startX = 0;
         this.startY = 0;
-        
-        // Таймеры для оптимизации
+
+        // Таймер для предотвращения спама запросами во Flask
         this.zoomTimeout = null;
-        this.rAF = null;
 
         this._wrapImage();
         this._initEvents();
+        console.log('[Zoom] Инициализация успешна');
     }
 
     _wrapImage() {
         const parent = this.img.parentElement;
+
         if (!parent.classList.contains('zoom-wrapper')) {
             const wrapper = document.createElement('div');
             wrapper.className = 'zoom-wrapper';
@@ -28,6 +30,7 @@ class ImageZoomPan {
         }
 
         this.wrapper = this.img.parentElement;
+
         Object.assign(this.wrapper.style, {
             overflow: 'hidden',
             position: 'relative',
@@ -38,7 +41,6 @@ class ImageZoomPan {
 
         this.img.style.transformOrigin = '0 0';
         this.img.style.pointerEvents = 'none';
-        this.img.style.willChange = 'transform'; // Подсказка браузеру для аппаратного ускорения
     }
 
     _initEvents() {
@@ -56,10 +58,10 @@ class ImageZoomPan {
             const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
             let newScale = this.scale * factor;
 
-            // Жестко ограничиваем масштаб: не меньше 1 и не больше 10
+            // Ограничиваем: не меньше 1 (оригинал) и не больше 10
             newScale = Math.max(1, Math.min(10, newScale));
 
-            // Защита от floating point багов: если масштаб близок к 1, сбрасываем в 1
+            // Если масштаб близок к 1, сбрасываем без прыжков (фикс бага с === 1)
             if (newScale <= 1.01) {
                 this.scale = 1;
                 this.pointX = 0;
@@ -76,7 +78,7 @@ class ImageZoomPan {
 
         // ── Начало перетаскивания ─────────────────────────────────────
         this.wrapper.addEventListener('mousedown', (e) => {
-            if (this.scale <= 1) return; 
+            if (this.scale <= 1) return; // не тащим, если нет зума
             e.preventDefault();
             this.panning = true;
             this.startX = e.clientX - this.pointX;
@@ -97,7 +99,7 @@ class ImageZoomPan {
         window.addEventListener('mouseup', () => {
             if (!this.panning) return;
             this.panning = false;
-            this.wrapper.style.cursor = 'grab';
+            this.wrapper.style.cursor = this.scale > 1 ? 'grab' : 'default';
         });
 
         // ── Двойной клик — сброс зума ────────────────────────────────
@@ -108,16 +110,17 @@ class ImageZoomPan {
             this.img.style.transition = 'transform 0.25s ease';
             this._applyTransform();
             setTimeout(() => (this.img.style.transition = ''), 260);
+            this.wrapper.style.cursor = 'default';
         });
     }
 
     _clamp() {
-        // Упрощенный clamp, так как scale теперь всегда >= 1
         const ww = this.wrapper.clientWidth;
         const wh = this.wrapper.clientHeight;
         const iw = this.img.clientWidth * this.scale;
         const ih = this.img.clientHeight * this.scale;
  
+        // Так как scale теперь всегда >= 1, расчет упрощается
         const minX = Math.min(0, ww - iw);
         const minY = Math.min(0, wh - ih);
         
@@ -126,18 +129,15 @@ class ImageZoomPan {
     }
 
     _applyTransform() {
-        // Отрисовка визуала 60 FPS без лагов
-        if (this.rAF) cancelAnimationFrame(this.rAF);
-        this.rAF = requestAnimationFrame(() => {
-            this.img.style.transform = `translate(${this.pointX}px, ${this.pointY}px) scale(${this.scale})`;
-        });
-
-        // Отправка на бэкенд с задержкой 150мс (Debounce), 
-        // чтобы не спамить Flask запросами каждую миллисекунду
+        // Меняем визуально картинку сразу же
+        this.img.style.transform = `translate(${this.pointX}px, ${this.pointY}px) scale(${this.scale})`;
+        
+        // А вот на бэкенд шлем с задержкой 150мс. 
+        // Если крутим колесико быстро - таймер сбрасывается и запрос уйдет только в конце.
         if (this.zoomTimeout) clearTimeout(this.zoomTimeout);
         this.zoomTimeout = setTimeout(() => {
             this._sendZoomToBackend();
-        }, 150); 
+        }, 150);
     }
 
     _sendZoomToBackend() {
@@ -158,17 +158,30 @@ class ImageZoomPan {
         let w = (rect.width / this.scale) * scaleFactorX;
         let h = (rect.height / this.scale) * scaleFactorY;
 
-        // Округляем и защищаем от выхода за границы оригинала
+        // Округляем до целых и не даем выйти за рамки исходника
         x = Math.max(0, Math.round(x));
         y = Math.max(0, Math.round(y));
         w = Math.min(naturalW - x, Math.round(w));
         h = Math.min(naturalH - y, Math.round(h));
 
-        console.log(`Sending zoom to backend: x=${x}, y=${y}, w=${w}, h=${h}`);
+        console.log(`[Zoom] Отправка на бэкенд: x=${x}, y=${y}, w=${w}, h=${h}`);
+
         fetch(`${window.location.protocol}//${window.location.hostname}:5000/set_zoom`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ x, y, w, h })
-        }).catch(err => console.error('Failed to set zoom on backend:', err));
+        }).catch(err => console.error('[Zoom] Ошибка отправки на бэк:', err));
     }
 }
+
+// Инициализация при загрузке страницы
+document.addEventListener('DOMContentLoaded', () => {
+    const streamImg = document.getElementById('stream');
+    if (streamImg) {
+        if (streamImg.complete && streamImg.naturalWidth) {
+            new ImageZoomPan(streamImg);
+        } else {
+            streamImg.addEventListener('load', () => new ImageZoomPan(streamImg), { once: true });
+        }
+    }
+});
