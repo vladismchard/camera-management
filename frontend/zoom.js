@@ -130,6 +130,26 @@ class ImageZoomPan {
     _applyTransform() {
         this.img.style.transform =
             `translate(${this.pointX}px, ${this.pointY}px) scale(${this.scale})`;
+        
+        this._sendZoomToBackend();
+    }
+
+    _sendZoomToBackend() {
+        const rect = this.wrapper.getBoundingClientRect();
+        const imgRect = this.img.getBoundingClientRect();
+        
+        // Вычисляем область, которая видна в контейнере-обертке
+        // Координаты x, y относительно оригинального изображения (без scale)
+        const x = -this.pointX / this.scale;
+        const y = -this.pointY / this.scale;
+        const w = rect.width / this.scale;
+        const h = rect.height / this.scale;
+
+        fetch(`${window.location.protocol}//${window.location.hostname}:5000/set_zoom`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ x, y, w, h })
+        }).catch(err => console.error('Failed to set zoom on backend:', err));
     }
 }
 

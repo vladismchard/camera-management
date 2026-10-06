@@ -401,6 +401,12 @@ def check_focus_manual():
         if frame is None:
             return jsonify({'error': 'Не удалось захватить кадр'}), 500
         
+        # Если установлена область приближения, обрезаем кадр
+        if zoom_area:
+            x, y, w, h = zoom_area['x'], zoom_area['y'], zoom_area['w'], zoom_area['h']
+            img_h, img_w = frame.shape[:2]
+            frame = frame[max(0, y):min(y + h, img_h), max(0, x):min(x + w, img_w)]
+
         focus_info = detector.check_focus(frame)
         
         return jsonify({
