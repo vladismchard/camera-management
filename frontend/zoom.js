@@ -42,7 +42,6 @@ class ImageZoomPan {
         this.img.style.transformOrigin = '0 0';
         this.img.style.pointerEvents = 'none';
     }
-
     _initEvents() {
         // ── Колесико мыши — зум ──────────────────────────────────────
         this.wrapper.addEventListener('wheel', (e) => {
@@ -55,30 +54,24 @@ class ImageZoomPan {
             const xs = (mouseX - this.pointX) / this.scale;
             const ys = (mouseY - this.pointY) / this.scale;
 
+            // Определяем направление (увеличить или уменьшить)
             const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
             let newScale = this.scale * factor;
 
-            // Ограничиваем: не меньше 1 (оригинал) и не больше 10
+            // Жестко не даем отдалить меньше оригинала (1) и приблизить больше (10)
             newScale = Math.max(1, Math.min(10, newScale));
 
-            // Если масштаб близок к 1, сбрасываем без прыжков (фикс бага с === 1)
-            if (newScale <= 1.01) {
-                this.scale = 1;
-                this.pointX = 0;
-                this.pointY = 0;
-            } else {
-                this.scale = newScale;
-                this.pointX = mouseX - xs * this.scale;
-                this.pointY = mouseY - ys * this.scale;
-                this._clamp();
-            }
-
+            this.scale = newScale;
+            this.pointX = mouseX - xs * this.scale;
+            this.pointY = mouseY - ys * this.scale;
+            
+            this._clamp();
             this._applyTransform();
         }, { passive: false });
 
         // ── Начало перетаскивания ─────────────────────────────────────
         this.wrapper.addEventListener('mousedown', (e) => {
-            if (this.scale <= 1) return; // не тащим, если нет зума
+            if (this.scale <= 1) return; 
             e.preventDefault();
             this.panning = true;
             this.startX = e.clientX - this.pointX;
@@ -174,7 +167,6 @@ class ImageZoomPan {
     }
 }
 
-// Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', () => {
     const streamImg = document.getElementById('stream');
     if (streamImg) {
