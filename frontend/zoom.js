@@ -119,13 +119,20 @@ class ImageZoomPan {
         const wh = this.wrapper.clientHeight;
         const iw = this.img.clientWidth  * this.scale;
         const ih = this.img.clientHeight * this.scale;
-
-        const minX = Math.min(0, ww - iw);
-        const minY = Math.min(0, wh - ih);
-
-        this.pointX = Math.min(0, Math.max(minX, this.pointX));
-        this.pointY = Math.min(0, Math.max(minY, this.pointY));
+ 
+        if (this.scale >= 1) {
+            const minX = Math.min(0, ww - iw);
+            const minY = Math.min(0, wh - ih);
+            this.pointX = Math.min(0, Math.max(minX, this.pointX));
+            this.pointY = Math.min(0, Math.max(minY, this.pointY));
+        } else {
+            // When scale < 1, the image is smaller than the wrapper.
+            // We center it to avoid "jumping" or stick it to 0,0.
+            this.pointX = (ww - iw) / 2;
+            this.pointY = (wh - ih) / 2;
+        }
     }
+
 
     _applyTransform() {
         this.img.style.transform =
