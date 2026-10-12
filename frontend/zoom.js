@@ -115,7 +115,7 @@ class ImageZoomPan {
         if (this.zoomTimeout) clearTimeout(this.zoomTimeout);
         this.zoomTimeout = setTimeout(() => {
             this._sendZoomToBackend();
-        }, 150);
+        }, 500);
     }
 
     _sendZoomToBackend() {
