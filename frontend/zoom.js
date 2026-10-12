@@ -138,6 +138,7 @@ class ImageZoomPan {
         let y = (-this.pointY / this.scale) * scaleFactorY;
         let w = (rect.width / this.scale) * scaleFactorX;
         let h = (rect.height / this.scale) * scaleFactorY;
+        
         x = Math.max(0, Math.round(x));
         y = Math.max(0, Math.round(y));
         w = Math.min(naturalW - x, Math.round(w));
@@ -151,18 +152,13 @@ class ImageZoomPan {
             body: JSON.stringify({ x, y, w, h })
         })
         .then(() => {
-            this.scale = 1;
-            this.pointX = 0;
-            this.pointY = 0;
-            this.baseW = w;
-            this.baseH = h;
-            this.img.style.transition = 'transform 0.3s ease';
-            this._applyTransform();
+            // НЕ сбрасываем зум, просто обновляем базовое разрешение
+            // Бэкенд начнёт отдавать crop, фронтенд продолжит его масштабировать
             setTimeout(() => {
-                this.img.style.transition = '';
-            }, 350);
-            this.wrapper.style.cursor = 'grab';       
-            console.log(`[Zoom] Локальный зум сброшен, новое базовое разрешение: ${w}x${h}`);
+                this.baseW = w;
+                this.baseH = h;
+                console.log(`[Zoom] Базовое разрешение обновлено: ${w}x${h}`);
+            }, 300);
         })
         .catch(err => console.error('[Zoom] Ошибка:', err));
     }
