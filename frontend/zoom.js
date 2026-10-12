@@ -12,7 +12,6 @@ class ImageZoomPan {
         this.startY = 0;
         this.baseW = (imageElement.naturalWidth > 300) ? imageElement.naturalWidth : 1280;
         this.baseH = (imageElement.naturalHeight > 300) ? imageElement.naturalHeight : 720;
-
         this.zoomTimeout = null;
         this.finalZoomTimeout = null;
         this._wrapImage();
@@ -127,7 +126,6 @@ class ImageZoomPan {
         const rect = this.wrapper.getBoundingClientRect();
         const naturalW = this.baseW; 
         const naturalH = this.baseH;
-        
         const domW = this.img.clientWidth;
         const domH = this.img.clientHeight;
 
@@ -140,7 +138,6 @@ class ImageZoomPan {
         let y = (-this.pointY / this.scale) * scaleFactorY;
         let w = (rect.width / this.scale) * scaleFactorX;
         let h = (rect.height / this.scale) * scaleFactorY;
-
         x = Math.max(0, Math.round(x));
         y = Math.max(0, Math.round(y));
         w = Math.min(naturalW - x, Math.round(w));
@@ -152,7 +149,22 @@ class ImageZoomPan {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ x, y, w, h })
-        }).catch(err => console.error('[Zoom] Ошибка:', err));
+        })
+        .then(() => {
+            this.scale = 1;
+            this.pointX = 0;
+            this.pointY = 0;
+            this.baseW = w;
+            this.baseH = h;
+            this.img.style.transition = 'transform 0.3s ease';
+            this._applyTransform();
+            setTimeout(() => {
+                this.img.style.transition = '';
+            }, 350);
+            this.wrapper.style.cursor = 'grab';       
+            console.log(`[Zoom] Локальный зум сброшен, новое базовое разрешение: ${w}x${h}`);
+        })
+        .catch(err => console.error('[Zoom] Ошибка:', err));
     }
 }
 
