@@ -1,8 +1,6 @@
-// frontend/zoom.js
 class ImageZoomPan {
     constructor(imageElement) {
         if (!imageElement) return;
-
         this.img = imageElement;
         this.scale = 1;
         this.pointX = 0;
@@ -14,23 +12,20 @@ class ImageZoomPan {
         this.baseH = (imageElement.naturalHeight > 300) ? imageElement.naturalHeight : 720;
         this.zoomTimeout = null;
         this.finalZoomTimeout = null;
+        this.waitingForCrop = false;
         this._wrapImage();
         this._initEvents();
         console.log(`[Zoom] Инициализация. Базовое разрешение зафиксировано: ${this.baseW}x${this.baseH}`);
     }
-
     _wrapImage() {
         const parent = this.img.parentElement;
-
         if (!parent.classList.contains('zoom-wrapper')) {
             const wrapper = document.createElement('div');
             wrapper.className = 'zoom-wrapper';
             parent.insertBefore(wrapper, this.img);
             wrapper.appendChild(this.img);
         }
-
         this.wrapper = this.img.parentElement;
-
         Object.assign(this.wrapper.style, {
             overflow: 'hidden',
             position: 'relative',
@@ -38,23 +33,18 @@ class ImageZoomPan {
             userSelect: 'none',
             display: 'block',
         });
-
         this.img.style.transformOrigin = '0 0';
         this.img.style.pointerEvents = 'none';
     }
-
     _initEvents() {
         this.wrapper.addEventListener('wheel', (e) => {
             e.preventDefault();
-
             const rect = this.wrapper.getBoundingClientRect();
             const mouseX = e.clientX - rect.left;
             const mouseY = e.clientY - rect.top;
-
             const xs = (mouseX - this.pointX) / this.scale;
             const ys = (mouseY - this.pointY) / this.scale;
-
-            const factor = e.deltaY < 0 ? 1.05 : 1 / 1.05; 
+            const factor = e.deltaY < 0 ? 1.05 : 1 / 1.05;
             let newScale = this.scale * factor;
             newScale = Math.max(1, Math.min(10, newScale));
             this.scale = newScale;
@@ -63,7 +53,6 @@ class ImageZoomPan {
             this._clamp();
             this._applyTransform();
         }, { passive: false });
-
         this.wrapper.addEventListener('mousedown', (e) => {
             if (this.scale <= 1) return;
             e.preventDefault();
@@ -94,24 +83,24 @@ class ImageZoomPan {
             this.wrapper.style.cursor = 'default';
         });
     }
-
     _clamp() {
         const ww = this.wrapper.clientWidth;
         const wh = this.wrapper.clientHeight;
         const iw = this.img.clientWidth * this.scale;
         const ih = this.img.clientHeight * this.scale;
- 
         const minX = Math.min(0, ww - iw);
         const minY = Math.min(0, wh - ih);
-        
         this.pointX = Math.min(0, Math.max(minX, this.pointX));
         this.pointY = Math.min(0, Math.max(minY, this.pointY));
     }
-
     _applyTransform() {
         this.img.style.transform = `translate(${this.pointX}px, ${this.pointY}px) scale(${this.scale})`;
         if (this.zoomTimeout) clearTimeout(this.zoomTimeout);
         if (this.finalZoomTimeout) clearTimeout(this.finalZoomTimeout);
+        if (this.waitingForCrop) {
+            console.log('[Zoom] Ожидание применения предыдущего crop...');
+            return;
+        }
         if (Math.abs(this.scale - 1) < 0.01) {
             this.zoomTimeout = setTimeout(() => {
                 this._sendZoomToBackend();
@@ -124,46 +113,42 @@ class ImageZoomPan {
     }
     _sendZoomToBackend() {
         const rect = this.wrapper.getBoundingClientRect();
-        const naturalW = this.baseW; 
+        const naturalW = this.baseW;
         const naturalH = this.baseH;
         const domW = this.img.clientWidth;
         const domH = this.img.clientHeight;
-
         if (!domW || !domH) return;
-
         const scaleFactorX = naturalW / domW;
         const scaleFactorY = naturalH / domH;
-
         let x = (-this.pointX / this.scale) * scaleFactorX;
         let y = (-this.pointY / this.scale) * scaleFactorY;
         let w = (rect.width / this.scale) * scaleFactorX;
         let h = (rect.height / this.scale) * scaleFactorY;
-        
         x = Math.max(0, Math.round(x));
         y = Math.max(0, Math.round(y));
         w = Math.min(naturalW - x, Math.round(w));
         h = Math.min(naturalH - y, Math.round(h));
-
         console.log(`[Zoom] Отправка на бэкенд: x=${x}, y=${y}, w=${w}, h=${h}`);
-
+        this.waitingForCrop = true;
         fetch(`${window.location.protocol}//${window.location.hostname}:5000/set_zoom`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ x, y, w, h })
         })
         .then(() => {
-            // НЕ сбрасываем зум, просто обновляем базовое разрешение
-            // Бэкенд начнёт отдавать crop, фронтенд продолжит его масштабировать
             setTimeout(() => {
                 this.baseW = w;
                 this.baseH = h;
-                console.log(`[Zoom] Базовое разрешение обновлено: ${w}x${h}`);
-            }, 300);
+                this.waitingForCrop = false;
+                console.log(`[Zoom] Crop применён, базовое разрешение: ${w}x${h}`);
+            }, 600);
         })
-        .catch(err => console.error('[Zoom] Ошибка:', err));
+        .catch(err => {
+            console.error('[Zoom] Ошибка:', err);
+            this.waitingForCrop = false;
+        });
     }
 }
-
 document.addEventListener('DOMContentLoaded', () => {
     const streamImg = document.getElementById('stream');
     if (streamImg) {
