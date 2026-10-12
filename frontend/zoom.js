@@ -10,9 +10,6 @@ class ImageZoomPan {
         this.panning = false;
         this.startX = 0;
         this.startY = 0;
-
-        // Фиксируем ИСХОДНОЕ разрешение камеры ОДИН РАЗ (чтобы не застрять в кропе бэкенда)
-        // Если при загрузке картинка уже обрезана, ставим стандартные 1280x720 (поменяй, если у тебя 1920x1080)
         this.baseW = (imageElement.naturalWidth > 300) ? imageElement.naturalWidth : 1280;
         this.baseH = (imageElement.naturalHeight > 300) ? imageElement.naturalHeight : 720;
 
@@ -48,7 +45,6 @@ class ImageZoomPan {
     }
 
     _initEvents() {
-        // ── Колесико мыши — зум ──────────────────────────────────────
         this.wrapper.addEventListener('wheel', (e) => {
             e.preventDefault();
 
@@ -59,21 +55,16 @@ class ImageZoomPan {
             const xs = (mouseX - this.pointX) / this.scale;
             const ys = (mouseY - this.pointY) / this.scale;
 
-            const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
+            const factor = e.deltaY < 0 ? 1.05 : 1 / 1.05; 
             let newScale = this.scale * factor;
-
-            // Не даем масштабу стать меньше 1 (оригинал) и больше 10
             newScale = Math.max(1, Math.min(10, newScale));
-
             this.scale = newScale;
             this.pointX = mouseX - xs * this.scale;
             this.pointY = mouseY - ys * this.scale;
-            
             this._clamp();
             this._applyTransform();
         }, { passive: false });
 
-        // ── Начало перетаскивания ─────────────────────────────────────
         this.wrapper.addEventListener('mousedown', (e) => {
             if (this.scale <= 1) return;
             e.preventDefault();
@@ -82,8 +73,6 @@ class ImageZoomPan {
             this.startY = e.clientY - this.pointY;
             this.wrapper.style.cursor = 'grabbing';
         });
-
-        // ── Движение мыши ─────────────────────────────────────────────
         window.addEventListener('mousemove', (e) => {
             if (!this.panning) return;
             this.pointX = e.clientX - this.startX;
@@ -91,15 +80,11 @@ class ImageZoomPan {
             this._clamp();
             this._applyTransform();
         });
-
-        // ── Конец перетаскивания ──────────────────────────────────────
         window.addEventListener('mouseup', () => {
             if (!this.panning) return;
             this.panning = false;
             this.wrapper.style.cursor = this.scale > 1 ? 'grab' : 'default';
         });
-
-        // ── Двойной клик — сброс зума ────────────────────────────────
         this.wrapper.addEventListener('dblclick', () => {
             this.scale = 1;
             this.pointX = 0;
