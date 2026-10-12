@@ -14,7 +14,7 @@ class ImageZoomPan {
         this.baseH = (imageElement.naturalHeight > 300) ? imageElement.naturalHeight : 720;
 
         this.zoomTimeout = null;
-
+        this.finalZoomTimeout = null;
         this._wrapImage();
         this._initEvents();
         console.log(`[Zoom] Инициализация. Базовое разрешение зафиксировано: ${this.baseW}x${this.baseH}`);
@@ -125,8 +125,6 @@ class ImageZoomPan {
     }
     _sendZoomToBackend() {
         const rect = this.wrapper.getBoundingClientRect();
-        
-        // ВАЖНО: используем ЗАФИКСИРОВАННЫЙ размер камеры, а не текущий (обрезанный бэкендом)
         const naturalW = this.baseW; 
         const naturalH = this.baseH;
         
