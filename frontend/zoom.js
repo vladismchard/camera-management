@@ -111,13 +111,18 @@ class ImageZoomPan {
 
     _applyTransform() {
         this.img.style.transform = `translate(${this.pointX}px, ${this.pointY}px) scale(${this.scale})`;
-        
         if (this.zoomTimeout) clearTimeout(this.zoomTimeout);
-        this.zoomTimeout = setTimeout(() => {
+        if (this.finalZoomTimeout) clearTimeout(this.finalZoomTimeout);
+        if (Math.abs(this.scale - 1) < 0.01) {
+            this.zoomTimeout = setTimeout(() => {
+                this._sendZoomToBackend();
+            }, 300);
+            return;
+        }
+        this.finalZoomTimeout = setTimeout(() => {
             this._sendZoomToBackend();
-        }, 500);
+        }, 1000);
     }
-
     _sendZoomToBackend() {
         const rect = this.wrapper.getBoundingClientRect();
         
