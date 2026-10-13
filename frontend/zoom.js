@@ -15,6 +15,8 @@ class ImageZoomPan {
         this.finalZoomTimeout = null;
         this.waitingForCrop = false;
         this.currentCropArea = null;
+        this.isResetting = false;
+        this.pendingScale = null; // новое: сохраняет отложенный scale
         this._wrapImage();
         this._initEvents();
         console.log(`[Zoom] Инициализация. Базовое разрешение: ${this.baseW}x${this.baseH}`);
@@ -52,6 +54,13 @@ class ImageZoomPan {
     _initEvents() {
         this.wrapper.addEventListener('wheel', (e) => {
             e.preventDefault();
+            
+            // Если ждём применения crop, игнорируем zoom
+            if (this.waitingForCrop || this.isResetting) {
+                console.log('[Zoom] Wheel заблокирован: ожидание применения crop');
+                return;
+            }
+            
             const rect = this.wrapper.getBoundingClientRect();
             const mouseX = e.clientX - rect.left;
             const mouseY = e.clientY - rect.top;
@@ -122,21 +131,27 @@ class ImageZoomPan {
         this.img.style.transform = `translate(${this.pointX}px, ${this.pointY}px) scale(${this.scale})`;
         if (this.zoomTimeout) clearTimeout(this.zoomTimeout);
         if (this.finalZoomTimeout) clearTimeout(this.finalZoomTimeout);
+        
+        if (this.isResetting) {
+            console.log('[Zoom] Сброс уже выполняется, новый таймер не ставится');
+            return;
+        }
+        
         if (this.waitingForCrop) {
             console.log('[Zoom] Ожидание применения предыдущего crop, отправка блокирована');
             return;
         }
         if (Math.abs(this.scale - 1) < 0.01) {
-            console.log('[Zoom] Scale ≈ 1, отправка сброса через 300ms');
+            console.log('[Zoom] Scale ≈ 1, отправка сброса через 500ms');
             this.zoomTimeout = setTimeout(() => {
                 this._sendResetToBackend();
-            }, 300);
+            }, 500);
             return;
         }
-        console.log(`[Zoom] Scale=${this.scale.toFixed(2)}, отправка crop через 1000ms`);
+        console.log(`[Zoom] Scale=${this.scale.toFixed(2)}, отправка crop через 800ms`);
         this.finalZoomTimeout = setTimeout(() => {
             this._sendZoomToBackend();
-        }, 1000);
+        }, 800);
     }
     _sendResetToBackend() {
         console.log('[Zoom] Отправка сброса crop на бэкенд: x=0, y=0, w=1280, h=720');
@@ -149,6 +164,7 @@ class ImageZoomPan {
             return;
         }
         
+        this.isResetting = true;
         this.waitingForCrop = true;
         this.currentCropArea = { x: 0, y: 0, w: this.baseW, h: this.baseH };
         
@@ -158,16 +174,18 @@ class ImageZoomPan {
             body: JSON.stringify({ x: 0, y: 0, w: this.baseW, h: this.baseH })
         })
         .then(() => {
-            console.log('[Zoom] Сброс отправлен, ожидание 600ms');
+            console.log('[Zoom] Сброс отправлен, ожидание 400ms');
             setTimeout(() => {
                 this.currentBackendCrop = { x: 0, y: 0, w: this.baseW, h: this.baseH };
                 this.waitingForCrop = false;
+                this.isResetting = false;
                 console.log('[Zoom] Сброс применён на бэкенде');
-            }, 600);
+            }, 400);
         })
         .catch(err => {
             console.error('[Zoom] Ошибка при сбросе:', err);
             this.waitingForCrop = false;
+            this.isResetting = false;
         });
     }
     _sendZoomToBackend() {
@@ -219,12 +237,12 @@ class ImageZoomPan {
             body: JSON.stringify({ x, y, w, h })
         })
         .then(() => {
-            console.log('[Zoom] Запрос отправлен, ожидание 600ms');
+            console.log('[Zoom] Запрос отправлен, ожидание 400ms');
             setTimeout(() => {
                 this.currentBackendCrop = {x, y, w, h};
                 this.waitingForCrop = false;
                 console.log(`[Zoom] Crop применён: ${w}x${h}, новый backend crop сохранён`);
-            }, 600);
+            }, 400);
         })
         .catch(err => {
             console.error('[Zoom] Ошибка:', err);
