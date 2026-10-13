@@ -27,15 +27,26 @@ class ImageZoomPan {
             wrapper.appendChild(this.img);
         }
         this.wrapper = this.img.parentElement;
+        const initialWidth = this.img.clientWidth || 800;
+        const initialHeight = this.img.clientHeight || 450;
         Object.assign(this.wrapper.style, {
             overflow: 'hidden',
             position: 'relative',
             cursor: 'grab',
             userSelect: 'none',
             display: 'block',
+            width: `${initialWidth}px`,
+            height: `${initialHeight}px`,
+            minWidth: `${initialWidth}px`,
+            minHeight: `${initialHeight}px`,
         });
         this.img.style.transformOrigin = '0 0';
         this.img.style.pointerEvents = 'none';
+        this.img.style.display = 'block';
+        this.img.style.width = '100%';
+        this.img.style.height = '100%';
+        this.img.style.objectFit = 'contain';
+        console.log(`[Zoom] Wrapper зафиксирован: ${initialWidth}×${initialHeight}`);
     }
     _initEvents() {
         this.wrapper.addEventListener('wheel', (e) => {
