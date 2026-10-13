@@ -91,19 +91,21 @@ def generate_frames():
         for frame in camera.capture_stream():
             if frame is None:
                 continue
-            
-            # Если установлена область приближения, обрезаем кадр для стрима
             if zoom_area:
                 x, y, w, h = zoom_area['x'], zoom_area['y'], zoom_area['w'], zoom_area['h']
                 img_h, img_w = frame.shape[:2]
-                frame = frame[max(0, y):min(y + h, img_h), max(0, x):min(x + w, img_w)]
+                x_start = max(0, x)
+                y_start = max(0, y)
+                x_end = min(x + w, img_w)
+                y_end = min(y + h, img_h)
+                
+                logger.debug(f"Crop frame: ({x_start}, {y_start}) -> ({x_end}, {y_end}), frame size: {img_w}x{img_h}")
+                frame = frame[y_start:y_end, x_start:x_end]
 
-            # Проверяем фокус только если включен auto_mode
             if auto_focus_mode:
                 focus_info = detector.check_focus(frame)
                 annotated_frame = _annotate_frame(frame, focus_info)
             else:
-                # В ручном режиме просто показываем кадр
                 annotated_frame = frame
             
             ret, buffer = cv2.imencode('.jpg', annotated_frame)
@@ -113,7 +115,6 @@ def generate_frames():
                        b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
     except Exception as e:
         logger.error(f"Error in frame generation: {e}", exc_info=True)
-
 
 @app.route('/stream')
 def stream():
@@ -163,6 +164,8 @@ def set_zoom():
         return jsonify({'error': str(e)}), 500
 
 
+
+
 @app.route('/capture', methods=['POST'])
 def capture():
     logger.info("Capture endpoint called")
@@ -177,14 +180,16 @@ def capture():
         # Если установлена область приближения, обрезаем кадр
         if zoom_area:
             x, y, w, h = zoom_area['x'], zoom_area['y'], zoom_area['w'], zoom_area['h']
-            # Защита от выхода за границы изображения
             img_h, img_w = frame.shape[:2]
-            x_end = min(x + w, img_w)
-            y_end = min(y + h, img_h)
+            
+            # Защита от выхода за границы
             x_start = max(0, x)
             y_start = max(0, y)
+            x_end = min(x + w, img_w)
+            y_end = min(y + h, img_h)
+            
+            logger.info(f"Capture crop: ({x_start}, {y_start}) -> ({x_end}, {y_end}), frame size: {img_w}x{img_h}")
             frame = frame[y_start:y_end, x_start:x_end]
-            logger.info(f"Frame cropped to zoom area: {zoom_area}")
 
         focus_info = detector.check_focus(frame)
 
