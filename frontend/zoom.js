@@ -11,11 +11,8 @@ class ImageZoomPan {
         this.baseW = 1280;
         this.baseH = 720;
         this.currentBackendCrop = { x: 0, y: 0, w: 1280, h: 720 };
-        
-        // НОВОЕ: реальное разрешение изображения, которое отдаёт бэкенд
         this.actualImageW = 1280;
         this.actualImageH = 720;
-        
         this.zoomTimeout = null;
         this.finalZoomTimeout = null;
         this.waitingForCrop = false;
@@ -110,13 +107,7 @@ class ImageZoomPan {
 
         this.wrapper.addEventListener('dblclick', () => {
             console.log(`[Zoom] Double click: сброс зума`);
-            this.scale = 1;
-            this.pointX = 0;
-            this.pointY = 0;
-            this.img.style.transition = 'transform 0.25s ease';
-            this._applyTransform();
-            setTimeout(() => (this.img.style.transition = ''), 260);
-            this.wrapper.style.cursor = 'default';
+            this._resetZoom();
         });
 
         this.img.addEventListener('load', () => {
@@ -169,6 +160,16 @@ class ImageZoomPan {
         }, 800);
     }
 
+    _resetZoom() {
+        this.scale = 1;
+        this.pointX = 0;
+        this.pointY = 0;
+        this.img.style.transition = 'transform 0.25s ease';
+        this._applyTransform();
+        setTimeout(() => (this.img.style.transition = ''), 260);
+        this.wrapper.style.cursor = 'default';
+    }
+
     _sendResetToBackend() {
         console.log('[Zoom] Отправка сброса crop на бэкенд: x=0, y=0, w=1280, h=720');
         
@@ -195,9 +196,17 @@ class ImageZoomPan {
                 this.currentBackendCrop = { x: 0, y: 0, w: this.baseW, h: this.baseH };
                 this.actualImageW = this.baseW;
                 this.actualImageH = this.baseH;
+                
+                // ИСПРАВЛЕНИЕ: сброс визуального состояния
+                this.scale = 1;
+                this.pointX = 0;
+                this.pointY = 0;
+                this.img.style.transform = 'translate(0px, 0px) scale(1)';
+                this.wrapper.style.cursor = 'default';
+                
                 this.waitingForCrop = false;
                 this.isResetting = false;
-                console.log('[Zoom] Сброс применён на бэкенде');
+                console.log('[Zoom] Сброс применён на бэкенде, визуальное состояние обнулено');
             }, 400);
         })
         .catch(err => {
@@ -225,7 +234,6 @@ class ImageZoomPan {
             return;
         }
 
-        // ИСПРАВЛЕНИЕ: используем actualImageW/H вместо currentBackendCrop.w/h
         const scaleFactorX = this.actualImageW / domW;
         const scaleFactorY = this.actualImageH / domH;
         
@@ -274,13 +282,17 @@ class ImageZoomPan {
             console.log('[Zoom] Запрос отправлен, ожидание 400ms');
             setTimeout(() => {
                 this.currentBackendCrop = {x, y, w, h};
-                
-                // ИСПРАВЛЕНИЕ: обновляем реальное разрешение изображения
                 this.actualImageW = w;
                 this.actualImageH = h;
                 
+                this.scale = 1;
+                this.pointX = 0;
+                this.pointY = 0;
+                this.img.style.transform = 'translate(0px, 0px) scale(1)';
+                this.wrapper.style.cursor = 'default';
+                
                 this.waitingForCrop = false;
-                console.log(`[Zoom] Crop применён: ${w}x${h}, actualImage обновлён на ${this.actualImageW}×${this.actualImageH}`);
+                console.log(`[Zoom] Crop применён: ${w}x${h}, actualImage обновлён, визуальное состояние сброшено`);
             }, 400);
         })
         .catch(err => {
