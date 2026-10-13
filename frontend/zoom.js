@@ -10,6 +10,7 @@ class ImageZoomPan {
         this.startY = 0;
         this.baseW = 1280;
         this.baseH = 720;
+        this.currentBackendCrop = { x: 0, y: 0, w: 1280, h: 720 };
         this.zoomTimeout = null;
         this.finalZoomTimeout = null;
         this.waitingForCrop = false;
@@ -139,33 +140,36 @@ class ImageZoomPan {
     }
     _sendZoomToBackend() {
         const rect = this.wrapper.getBoundingClientRect();
-        const naturalW = this.baseW;
-        const naturalH = this.baseH;
         const domW = this.img.clientWidth;
         const domH = this.img.clientHeight;
         console.log(`[Zoom] _sendZoomToBackend вызван:`);
         console.log(`  wrapper: ${rect.width.toFixed(0)}×${rect.height.toFixed(0)}`);
         console.log(`  img.client: ${domW}×${domH}`);
-        console.log(`  base (камера): ${naturalW}×${naturalH}`);
+        console.log(`  backend crop: x=${this.currentBackendCrop.x}, y=${this.currentBackendCrop.y}, w=${this.currentBackendCrop.w}×${this.currentBackendCrop.h}`);
         console.log(`  scale: ${this.scale.toFixed(2)}`);
         console.log(`  translate: (${this.pointX.toFixed(0)}, ${this.pointY.toFixed(0)})`);
         if (!domW || !domH) {
             console.error('[Zoom] Ошибка: domW или domH = 0');
             return;
         }
-        const scaleFactorX = naturalW / domW;
-        const scaleFactorY = naturalH / domH;
+        const scaleFactorX = this.currentBackendCrop.w / domW;
+        const scaleFactorY = this.currentBackendCrop.h / domH;
         console.log(`  scaleFactor: X=${scaleFactorX.toFixed(3)}, Y=${scaleFactorY.toFixed(3)}`);
-        let x = (-this.pointX / this.scale) * scaleFactorX;
-        let y = (-this.pointY / this.scale) * scaleFactorY;
-        let w = (rect.width / this.scale) * scaleFactorX;
-        let h = (rect.height / this.scale) * scaleFactorY;
-        console.log(`  до clamp: x=${x.toFixed(1)}, y=${y.toFixed(1)}, w=${w.toFixed(1)}, h=${h.toFixed(1)}`);
+        let localX = (-this.pointX / this.scale) * scaleFactorX;
+        let localY = (-this.pointY / this.scale) * scaleFactorY;
+        let localW = (rect.width / this.scale) * scaleFactorX;
+        let localH = (rect.height / this.scale) * scaleFactorY;
+        let x = this.currentBackendCrop.x + localX;
+        let y = this.currentBackendCrop.y + localY;
+        let w = localW;
+        let h = localH;
+        console.log(`  локальные координаты: x=${localX.toFixed(1)}, y=${localY.toFixed(1)}, w=${localW.toFixed(1)}, h=${localH.toFixed(1)}`);
+        console.log(`  абсолютные координаты (до clamp): x=${x.toFixed(1)}, y=${y.toFixed(1)}, w=${w.toFixed(1)}, h=${h.toFixed(1)}`);
         x = Math.max(0, Math.round(x));
         y = Math.max(0, Math.round(y));
-        w = Math.min(naturalW - x, Math.round(w));
-        h = Math.min(naturalH - y, Math.round(h));
-        console.log(`  после clamp: x=${x}, y=${y}, w=${w}, h=${h}`);
+        w = Math.min(this.baseW - x, Math.round(w));
+        h = Math.min(this.baseH - y, Math.round(h));
+        console.log(`  абсолютные координаты (после clamp): x=${x}, y=${y}, w=${w}, h=${h}`);
         if (this.currentCropArea && 
             this.currentCropArea.x === x && 
             this.currentCropArea.y === y && 
@@ -185,8 +189,9 @@ class ImageZoomPan {
         .then(() => {
             console.log('[Zoom] Запрос отправлен, ожидание 600ms');
             setTimeout(() => {
+                this.currentBackendCrop = {x, y, w, h};
                 this.waitingForCrop = false;
-                console.log(`[Zoom] Crop применён: ${w}x${h}, блокировка снята`);
+                console.log(`[Zoom] Crop применён: ${w}x${h}, новый backend crop сохранён`);
             }, 600);
         })
         .catch(err => {
