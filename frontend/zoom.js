@@ -127,7 +127,9 @@ class ImageZoomPan {
             return;
         }
         
-        this.finalZoomTimeout = setTimeout(() => this._sendZoomToBackend(), 600);
+        this.finalZoomTimeout = setTimeout(() => {
+            this._sendZoomToBackend();
+        }, 600);
     }
 
     _resetZoom() {

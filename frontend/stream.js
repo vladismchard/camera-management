@@ -17,12 +17,24 @@ class StreamUI {
         this.modeToggle = new FocusModeToggle(this.apiUrl);
         this.modeToggle.onChange((autoMode) => this.onModeChanged(autoMode));
 
-        this.elements.stream.src = `${this.apiUrl}/stream`;
-        this.elements.checkFocusBtn.addEventListener('click', () => this.checkFocus());
-        this.elements.applyThresholdBtn.addEventListener('click', () => this.applyThreshold());
+        this.checkHealthAndInit();
+    }
 
-        this.loadThresholdSettings();
-        setInterval(() => this.fetchMetrics(), 2000);
+    async checkHealthAndInit() {
+        try {
+            const response = await fetch(`${this.apiUrl}/health`);
+            const data = await response.json();
+            
+            if (data.camera === false) {
+                window.location.href = 'error.html';
+                return;
+            }
+            
+            this.elements.stream.src = `${this.apiUrl}/stream`;
+        } catch (error) {
+            console.error('Health check failed:', error);
+            window.location.href = 'error.html';
+        }
     }
 
     async loadThresholdSettings() {
