@@ -1,7 +1,6 @@
 # backend/autofocus.py
 import logging
 import time
-from app import zoom_area
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +14,7 @@ class AutoFocus:
         self.detector = focus_detector
         self.focus_results = []
 
-    def capture_series(self, num_steps=3, step_size=1):
+    def capture_series(self, num_steps=3, step_size=1, zoom_area=None):
         self.focus_results = []
 
         if num_steps % 2 == 0:

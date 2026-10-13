@@ -241,7 +241,7 @@ def run_autofocus():
 
         def worker():
             try:
-                autofocus.capture_series(num_steps, step_size)
+                autofocus.capture_series(num_steps, step_size, zoom_area=zoom_area)
             except Exception as e:
                 logger.error(f"Error in autofocus worker: {e}", exc_info=True)
             finally:
