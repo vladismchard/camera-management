@@ -129,7 +129,7 @@ class ImageZoomPan {
         if (Math.abs(this.scale - 1) < 0.01) {
             console.log('[Zoom] Scale ≈ 1, отправка сброса через 300ms');
             this.zoomTimeout = setTimeout(() => {
-                this._sendZoomToBackend();
+                this._sendResetToBackend();
             }, 300);
             return;
         }
@@ -137,6 +137,38 @@ class ImageZoomPan {
         this.finalZoomTimeout = setTimeout(() => {
             this._sendZoomToBackend();
         }, 1000);
+    }
+    _sendResetToBackend() {
+        console.log('[Zoom] Отправка сброса crop на бэкенд: x=0, y=0, w=1280, h=720');
+        
+        if (this.currentBackendCrop.x === 0 && 
+            this.currentBackendCrop.y === 0 && 
+            this.currentBackendCrop.w === this.baseW && 
+            this.currentBackendCrop.h === this.baseH) {
+            console.log('[Zoom] Бэкенд уже сброшен, отправка не нужна');
+            return;
+        }
+        
+        this.waitingForCrop = true;
+        this.currentCropArea = { x: 0, y: 0, w: this.baseW, h: this.baseH };
+        
+        fetch(`${window.location.protocol}//${window.location.hostname}:5000/set_zoom`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ x: 0, y: 0, w: this.baseW, h: this.baseH })
+        })
+        .then(() => {
+            console.log('[Zoom] Сброс отправлен, ожидание 600ms');
+            setTimeout(() => {
+                this.currentBackendCrop = { x: 0, y: 0, w: this.baseW, h: this.baseH };
+                this.waitingForCrop = false;
+                console.log('[Zoom] Сброс применён на бэкенде');
+            }, 600);
+        })
+        .catch(err => {
+            console.error('[Zoom] Ошибка при сбросе:', err);
+            this.waitingForCrop = false;
+        });
     }
     _sendZoomToBackend() {
         const rect = this.wrapper.getBoundingClientRect();
