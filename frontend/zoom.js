@@ -191,22 +191,28 @@ class ImageZoomPan {
             body: JSON.stringify({ x: 0, y: 0, w: this.baseW, h: this.baseH })
         })
         .then(() => {
-            console.log('[Zoom] Сброс отправлен, ожидание 400ms');
+            console.log('[Zoom] Сброс отправлен, ожидание применения crop');
             setTimeout(() => {
+                // Обновляем внутреннее состояние crop
                 this.currentBackendCrop = { x: 0, y: 0, w: this.baseW, h: this.baseH };
                 this.actualImageW = this.baseW;
                 this.actualImageH = this.baseH;
                 
-                // ИСПРАВЛЕНИЕ: сброс визуального состояния
+                // Плавно сбрасываем визуальное состояние с анимацией
+                this.img.style.transition = 'transform 0.3s ease';
                 this.scale = 1;
                 this.pointX = 0;
                 this.pointY = 0;
                 this.img.style.transform = 'translate(0px, 0px) scale(1)';
-                this.wrapper.style.cursor = 'default';
+                
+                setTimeout(() => {
+                    this.img.style.transition = '';
+                    this.wrapper.style.cursor = 'default';
+                }, 300);
                 
                 this.waitingForCrop = false;
                 this.isResetting = false;
-                console.log('[Zoom] Сброс применён на бэкенде, визуальное состояние обнулено');
+                console.log('[Zoom] Сброс применён на бэкенде');
             }, 400);
         })
         .catch(err => {
@@ -279,20 +285,27 @@ class ImageZoomPan {
             body: JSON.stringify({ x, y, w, h })
         })
         .then(() => {
-            console.log('[Zoom] Запрос отправлен, ожидание 400ms');
+            console.log('[Zoom] Запрос отправлен, ожидание применения crop');
             setTimeout(() => {
+                // Обновляем внутреннее состояние crop
                 this.currentBackendCrop = {x, y, w, h};
                 this.actualImageW = w;
                 this.actualImageH = h;
                 
+                // Плавно сбрасываем визуальное состояние с анимацией
+                this.img.style.transition = 'transform 0.3s ease';
                 this.scale = 1;
                 this.pointX = 0;
                 this.pointY = 0;
                 this.img.style.transform = 'translate(0px, 0px) scale(1)';
-                this.wrapper.style.cursor = 'default';
+                
+                setTimeout(() => {
+                    this.img.style.transition = '';
+                    this.wrapper.style.cursor = 'default';
+                }, 300);
                 
                 this.waitingForCrop = false;
-                console.log(`[Zoom] Crop применён: ${w}x${h}, actualImage обновлён, визуальное состояние сброшено`);
+                console.log(`[Zoom] Crop применён: ${w}x${h}, actualImage обновлён`);
             }, 400);
         })
         .catch(err => {
