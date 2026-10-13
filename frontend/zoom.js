@@ -185,61 +185,7 @@ class ImageZoomPan {
         this.waitingForCrop = true;
         this.currentCropArea = { x: 0, y: 0, w: this.baseW, h: this.baseH };
         
-        fetch(`${window.location.protocol}//${window.location.hostname}:5000/set_zoom`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ x: 0, y: 0, w: this.baseW, h: this.baseH })
-        })
-        .then(() => {
-            console.log('[Zoom] Сброс отправлен, ожидание применения crop');
-            setTimeout(() => {
-                // Обновляем внутреннее состояние crop
-                this.currentBackendCrop = { x: 0, y: 0, w: this.baseW, h: this.baseH };
-                this.actualImageW = this.baseW;
-                this.actualImageH = this.baseH;
-                
-                // Быстро сбрасываем визуальное состояние
-                this.img.style.transition = 'transform 0.1s ease-out';
-                this.scale = 1;
-                this.pointX = 0;
-                this.pointY = 0;
-                this.img.style.transform = 'translate(0px, 0px) scale(1)';
-                
-                setTimeout(() => {
-                    this.img.style.transition = '';
-                    this.wrapper.style.cursor = 'default';
-                }, 100);
-                
-                this.waitingForCrop = false;
-                this.isResetting = false;
-                console.log('[Zoom] Сброс применён на бэкенде');
-            }, 400);
-        })
-        .catch(err => {
-            console.error('[Zoom] Ошибка при сбросе:', err);
-            this.waitingForCrop = false;
-            this.isResetting = false;
-        });
-    }
-
-    _sendZoomToBackend() {
-        const rect = this.wrapper.getBoundingClientRect();
-        const domW = this.img.clientWidth;
-        const domH = this.img.clientHeight;
-        
-        console.log(`[Zoom] _sendZoomToBackend вызван:`);
-        console.log(`  wrapper: ${rect.width.toFixed(0)}×${rect.height.toFixed(0)}`);
-        console.log(`  img.client: ${domW}×${domH}`);
-        console.log(`  actual backend image: ${this.actualImageW}×${this.actualImageH}`);
-        console.log(`  backend crop: x=${this.currentBackendCrop.x}, y=${this.currentBackendCrop.y}, w=${this.currentBackendCrop.w}×${this.currentBackendCrop.h}`);
-        console.log(`  scale: ${this.scale.toFixed(2)}`);
-        console.log(`  translate: (${this.pointX.toFixed(0)}, ${this.pointY.toFixed(0)})`);
-
-        if (!domW || !domH) {
-            console.error('[Zoom] Ошибка: domW или domH = 0');
-            return;
-        }
-
+        fetch(`${window.location.protocol}//${window.location.hostname}:5000/setПРАВЛЕНИЕ: используем actualImageW/H вместо currentBackendCrop.w/h
         const scaleFactorX = this.actualImageW / domW;
         const scaleFactorY = this.actualImageH / domH;
         
@@ -285,27 +231,16 @@ class ImageZoomPan {
             body: JSON.stringify({ x, y, w, h })
         })
         .then(() => {
-            console.log('[Zoom] Запрос отправлен, ожидание применения crop');
+            console.log('[Zoom] Запрос отправлен, ожидание 400ms');
             setTimeout(() => {
-                // Обновляем внутреннее состояние crop
                 this.currentBackendCrop = {x, y, w, h};
+                
+                // ИСПРАВЛЕНИЕ: обновляем реальное разрешение изображения
                 this.actualImageW = w;
                 this.actualImageH = h;
                 
-                // Быстро сбрасываем визуальное состояние
-                this.img.style.transition = 'transform 0.1s ease-out';
-                this.scale = 1;
-                this.pointX = 0;
-                this.pointY = 0;
-                this.img.style.transform = 'translate(0px, 0px) scale(1)';
-                
-                setTimeout(() => {
-                    this.img.style.transition = '';
-                    this.wrapper.style.cursor = 'default';
-                }, 100);
-                
                 this.waitingForCrop = false;
-                console.log(`[Zoom] Crop применён: ${w}x${h}, actualImage обновлён`);
+                console.log(`[Zoom] Crop применён: ${w}x${h}, actualImage обновлён на ${this.actualImageW}×${this.actualImageH}`);
             }, 400);
         })
         .catch(err => {
