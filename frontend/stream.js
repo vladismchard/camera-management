@@ -18,6 +18,7 @@ class StreamUI {
         this.modeToggle.onChange((autoMode) => this.onModeChanged(autoMode));
 
         this.checkHealthAndInit();
+        this.resetZoomOnLoad();
         this.elements.checkFocusBtn.addEventListener('click', () => this.checkFocus());
         this.elements.applyThresholdBtn.addEventListener('click', () => this.applyThreshold());
 
@@ -39,6 +40,18 @@ class StreamUI {
         } catch (error) {
             console.error('Health check failed:', error);
             window.location.href = 'error.html';
+        }
+    }
+
+    async resetZoomOnLoad() {
+        try {
+            await fetch(`${this.apiUrl}/set_zoom`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ x: 0, y: 0, w: 1280, h: 720 })
+            });
+        } catch (e) {
+            console.error('Failed to reset zoom on load:', e);
         }
     }
 
