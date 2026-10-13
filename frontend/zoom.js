@@ -198,8 +198,8 @@ class ImageZoomPan {
                 this.actualImageW = this.baseW;
                 this.actualImageH = this.baseH;
                 
-                // Плавно сбрасываем визуальное состояние с анимацией
-                this.img.style.transition = 'transform 0.3s ease';
+                // Быстро сбрасываем визуальное состояние
+                this.img.style.transition = 'transform 0.1s ease-out';
                 this.scale = 1;
                 this.pointX = 0;
                 this.pointY = 0;
@@ -208,7 +208,7 @@ class ImageZoomPan {
                 setTimeout(() => {
                     this.img.style.transition = '';
                     this.wrapper.style.cursor = 'default';
-                }, 300);
+                }, 100);
                 
                 this.waitingForCrop = false;
                 this.isResetting = false;
@@ -292,8 +292,8 @@ class ImageZoomPan {
                 this.actualImageW = w;
                 this.actualImageH = h;
                 
-                // Плавно сбрасываем визуальное состояние с анимацией
-                this.img.style.transition = 'transform 0.3s ease';
+                // Быстро сбрасываем визуальное состояние
+                this.img.style.transition = 'transform 0.1s ease-out';
                 this.scale = 1;
                 this.pointX = 0;
                 this.pointY = 0;
@@ -302,7 +302,7 @@ class ImageZoomPan {
                 setTimeout(() => {
                     this.img.style.transition = '';
                     this.wrapper.style.cursor = 'default';
-                }, 300);
+                }, 100);
                 
                 this.waitingForCrop = false;
                 console.log(`[Zoom] Crop применён: ${w}x${h}, actualImage обновлён`);
