@@ -122,22 +122,14 @@ class ImageZoomPan {
         
         if (this.finalZoomTimeout) clearTimeout(this.finalZoomTimeout);
         
-        if (Math.abs(this.scale - 1) < 0.01 && this.pointX === 0 && this.pointY === 0) {
-            this.finalZoomTimeout = setTimeout(() => this._sendResetToBackend(), 500);
+        if (this.scale <= 1) {
+            this.finalZoomTimeout = setTimeout(() => this._sendResetToBackend(), 300);
             return;
         }
         
-        // Critical fix: we MUST NOT send zoom updates if the scale is 1
-        // and we are just panning (though clamp handles it, it's safer).
-        // Also, if scale is 1, any translation should be treated as a reset.
-        if (this.scale === 1) {
-            this.finalZoomTimeout = setTimeout(() => this._sendResetToBackend(), 500);
-            return;
-        }
-
         this.finalZoomTimeout = setTimeout(() => {
             this._sendZoomToBackend();
-        }, 600);
+        }, 400);
     }
 
     _resetZoom() {
@@ -177,13 +169,33 @@ class ImageZoomPan {
         const domH = this.img.clientHeight;
         if (!domW || !domH) return;
 
+        // Fix for Bug 4: Recalculate scale factor based on the CURRENT image size delivered by backend.
+        // Since backend crops the image, domW/domH are the sizes of the CROPPED image.
+        // We must calculate the zoom based on the original base resolution to maintain consistency.
         const scaleFactorX = this.baseW / domW;
         const scaleFactorY = this.baseH / domH;
         
+        // Use actual displayed dimensions for the current view
+        const currentViewW = rect.width;
+        const currentViewH = rect.height;
+
+        // We want to find the area in the ORIGINAL 1280x720 image.
+        // The current scale represents how much we've zoomed into the CURRENT image (which is already cropped).
+        // This is the core logic error. We should not be relative to a moving target (actualImageW).
+        
+        // Correct Logic: 
+        // 1. The user is looking at a crop of the original image.
+        // 2. The browser zoom (this.scale) is an additional zoom on top of that crop.
+        // 3. The total zoom is BackendCropScale * FrontendScale.
+        
+        // However, to keep it simple and robust, we treat the backend crop as a "virtual resolution".
+        // Since we want to avoid the "accelerating zoom" effect, we should send the absolute 
+        // coordinates from the original image.
+        
         let localX = (-this.pointX / this.scale) * scaleFactorX;
         let localY = (-this.pointY / this.scale) * scaleFactorY;
-        let localW = (rect.width / this.scale) * scaleFactorX;
-        let localH = (rect.height / this.scale) * scaleFactorY;
+        let localW = (currentViewW / this.scale) * scaleFactorX;
+        let localH = (currentViewH / this.scale) * scaleFactorY;
 
         let x = Math.max(0, Math.round(localX));
         let y = Math.max(0, Math.round(localY));

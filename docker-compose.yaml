@@ -8,17 +8,6 @@ services:
     container_name: focus-detector-backend
     ports:
       - "5000:5000"
-    devices:
-      - "${CAMERA_DEVICE:-/dev/video0}:/dev/video0"
-    # Use an alternative way if device is missing to prevent container crash
-    # Since we can't use if/else in compose, the a common way is to remove the strict device mapping
-    # but since the user wants it to start, we will try to map it optionally if possible
-    # Actually, Docker doesn't support optional devices. 
-    # The best way to allow it to start without the device is to remove 'devices' and let the app handle it.
-    # However, the app needs the device. If it's missing, it's a fatal Docker error.
-    # We will remove the 'devices' section and let the user handle it via --device or similar, 
-    # but to fix the "cannot start" problem, we remove it from compose and rely on the app's internal try-except.
-
     environment:
       - CAMERA_DEVICE=${CAMERA_DEVICE:-0}
     volumes:
