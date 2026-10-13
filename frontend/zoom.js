@@ -169,38 +169,36 @@ class ImageZoomPan {
         const domH = this.img.clientHeight;
         if (!domW || !domH) return;
 
-        // Fix for Bug 4: Recalculate scale factor based on the CURRENT image size delivered by backend.
-        // Since backend crops the image, domW/domH are the sizes of the CROPPED image.
-        // We must calculate the zoom based on the original base resolution to maintain consistency.
-        const scaleFactorX = this.baseW / domW;
-        const scaleFactorY = this.baseH / domH;
+        // The image in the DOM (domW, domH) is the CURRENT cropped image from the backend.
+        // We need to map the frontend zoom (this.scale) back to the original 1280x720 resolution.
         
-        // Use actual displayed dimensions for the current view
-        const currentViewW = rect.width;
-        const currentViewH = rect.height;
+        // Current crop parameters from backend
+        const bX = this.currentBackendCrop.x;
+        const bY = this.currentBackendCrop.y;
+        const bW = this.currentBackendCrop.w;
+        const bH = this.currentBackendCrop.h;
 
-        // We want to find the area in the ORIGINAL 1280x720 image.
-        // The current scale represents how much we've zoomed into the CURRENT image (which is already cropped).
-        // This is the core logic error. We should not be relative to a moving target (actualImageW).
-        
-        // Correct Logic: 
-        // 1. The user is looking at a crop of the original image.
-        // 2. The browser zoom (this.scale) is an additional zoom on top of that crop.
-        // 3. The total zoom is BackendCropScale * FrontendScale.
-        
-        // However, to keep it simple and robust, we treat the backend crop as a "virtual resolution".
-        // Since we want to avoid the "accelerating zoom" effect, we should send the absolute 
-        // coordinates from the original image.
-        
-        let localX = (-this.pointX / this.scale) * scaleFactorX;
-        let localY = (-this.pointY / this.scale) * scaleFactorY;
-        let localW = (currentViewW / this.scale) * scaleFactorX;
-        let localH = (currentViewH / this.scale) * scaleFactorY;
+        // Ratio between backend crop and actual DOM size
+        const ratioX = bW / domW;
+        const ratioY = bH / domH;
 
-        let x = Math.max(0, Math.round(localX));
-        let y = Math.max(0, Math.round(localY));
-        let w = Math.min(this.baseW - x, Math.round(localW));
-        let h = Math.min(this.baseH - y, Math.round(localH));
+        // Calculate how much of the CURRENT image we are showing
+        const viewW = rect.width / this.scale;
+        const viewH = rect.height / this.scale;
+        const viewX = -this.pointX / this.scale;
+        const viewY = -this.pointY / this.scale;
+
+        // Convert this view window into the original 1280x720 space
+        let x = Math.round(bX + viewX * ratioX);
+        let y = Math.round(bY + viewY * ratioY);
+        let w = Math.round(viewW * ratioX);
+        let h = Math.round(viewH * ratioY);
+
+        // Clamp to original image boundaries
+        x = Math.max(0, Math.min(x, this.baseW));
+        y = Math.max(0, Math.min(y, this.baseH));
+        w = Math.min(this.baseW - x, w);
+        h = Math.min(this.baseH - y, h);
 
         if (this.currentCropArea && this.currentCropArea.x === x && this.currentCropArea.y === y && 
             this.currentCropArea.w === w && this.currentCropArea.h === h) return;
