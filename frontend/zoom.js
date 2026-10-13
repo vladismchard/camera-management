@@ -127,6 +127,14 @@ class ImageZoomPan {
             return;
         }
         
+        // Critical fix: we MUST NOT send zoom updates if the scale is 1
+        // and we are just panning (though clamp handles it, it's safer).
+        // Also, if scale is 1, any translation should be treated as a reset.
+        if (this.scale === 1) {
+            this.finalZoomTimeout = setTimeout(() => this._sendResetToBackend(), 500);
+            return;
+        }
+
         this.finalZoomTimeout = setTimeout(() => {
             this._sendZoomToBackend();
         }, 600);

@@ -18,6 +18,11 @@ class StreamUI {
         this.modeToggle.onChange((autoMode) => this.onModeChanged(autoMode));
 
         this.checkHealthAndInit();
+        this.elements.checkFocusBtn.addEventListener('click', () => this.checkFocus());
+        this.elements.applyThresholdBtn.addEventListener('click', () => this.applyThreshold());
+
+        this.loadThresholdSettings();
+        setInterval(() => this.fetchMetrics(), 2000);
     }
 
     async checkHealthAndInit() {
