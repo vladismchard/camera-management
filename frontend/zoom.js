@@ -198,6 +198,14 @@ class ImageZoomPan {
                 this.currentBackendCrop = { x: 0, y: 0, w: this.baseW, h: this.baseH };
                 this.actualImageW = this.baseW;
                 this.actualImageH = this.baseH;
+                
+                // Мгновенный сброс без анимации
+                this.scale = 1;
+                this.pointX = 0;
+                this.pointY = 0;
+                this.img.style.transform = 'translate(0px, 0px) scale(1)';
+                this.wrapper.style.cursor = 'default';
+                
                 this.waitingForCrop = false;
                 this.isResetting = false;
                 console.log('[Zoom] Сброс применён на бэкенде');
@@ -278,6 +286,14 @@ class ImageZoomPan {
                 this.currentBackendCrop = { x, y, w, h };
                 this.actualImageW = w;
                 this.actualImageH = h;
+                
+                // Мгновенный сброс без анимации
+                this.scale = 1;
+                this.pointX = 0;
+                this.pointY = 0;
+                this.img.style.transform = 'translate(0px, 0px) scale(1)';
+                this.wrapper.style.cursor = 'default';
+                
                 this.waitingForCrop = false;
                 console.log(`[Zoom] Crop применён: ${w}x${h}, actualImage обновлён`);
             }, 400);
