@@ -288,15 +288,10 @@ class ImageZoomPan {
                 this.actualImageH = h;
                 
                 // Мгновенный сброс без анимации
-                this.scale = 1;
-                this.pointX = 0;
-                this.pointY = 0;
-                this.img.style.transform = 'translate(0px, 0px) scale(1)';
-                this.wrapper.style.cursor = 'default';
-                
-                this.waitingForCrop = false;
-                console.log(`[Zoom] Crop применён: ${w}x${h}, actualImage обновлён`);
-            }, 400);
+        this.waitingForCrop = false;
+        this.isResetting = false;
+        console.log(`[Zoom] Crop применён: ${w}x${h}, actualImage обновлён`);
+    }, 400);
         })
         .catch(err => {
             console.error('[Zoom] Ошибка:', err);

@@ -1,6 +1,9 @@
 # backend/autofocus.py
 import logging
 import time
+from app import zoom_area
+
+logger = logging.getLogger(__name__)
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +39,11 @@ class AutoFocus:
             frame = self.camera.capture_single()
 
             if frame is not None:
+                if zoom_area:
+                    x, y, w, h = zoom_area['x'], zoom_area['y'], zoom_area['w'], zoom_area['h']
+                    img_h, img_w = frame.shape[:2]
+                    frame = frame[max(0, y):min(y + h, img_h), max(0, x):min(x + w, img_w)]
+
                 focus_info = self.detector.check_focus(frame)
                 variance = focus_info['variance']
 
