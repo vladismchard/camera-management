@@ -8,6 +8,8 @@ services:
     container_name: focus-detector-backend
     ports:
       - "5000:5000"
+    devices:
+      - "${CAMERA_DEVICE:-/dev/video0}:/dev/video0"
     environment:
       - CAMERA_DEVICE=${CAMERA_DEVICE:-0}
     volumes:
