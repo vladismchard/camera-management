@@ -169,16 +169,16 @@ class ImageZoomPan {
         const domH = this.img.clientHeight;
         if (!domW || !domH) return;
 
-        const scaleFactorX = this.actualImageW / domW;
-        const scaleFactorY = this.actualImageH / domH;
+        const scaleFactorX = this.baseW / domW;
+        const scaleFactorY = this.baseH / domH;
         
         let localX = (-this.pointX / this.scale) * scaleFactorX;
         let localY = (-this.pointY / this.scale) * scaleFactorY;
         let localW = (rect.width / this.scale) * scaleFactorX;
         let localH = (rect.height / this.scale) * scaleFactorY;
 
-        let x = Math.max(0, Math.round(this.currentBackendCrop.x + localX));
-        let y = Math.max(0, Math.round(this.currentBackendCrop.y + localY));
+        let x = Math.max(0, Math.round(localX));
+        let y = Math.max(0, Math.round(localY));
         let w = Math.min(this.baseW - x, Math.round(localW));
         let h = Math.min(this.baseH - y, Math.round(localH));
 

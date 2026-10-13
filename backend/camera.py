@@ -4,6 +4,9 @@ import os
 import re
 import threading
 import time
+import logging
+
+logger = logging.getLogger(__name__)
 
 class Camera:
     def __init__(self):
@@ -31,11 +34,17 @@ class Camera:
         return int(device_str)
     
     def _init_camera(self):
-        self.cap = cv2.VideoCapture(self.device)
-        if not self.cap.isOpened():
-            raise RuntimeError(f"Cannot open camera device {self.device}")
-        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
-        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+        try:
+            self.cap = cv2.VideoCapture(self.device)
+            if not self.cap.isOpened():
+                logger.error(f"Cannot open camera device {self.device}")
+                self.cap = None
+            else:
+                self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+                self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+        except Exception as e:
+            logger.error(f"Error initializing camera: {e}")
+            self.cap = None
     
     def _update_frame(self):
         """Фоновый поток, который постоянно вычитывает камеру, опустошая буфер"""
