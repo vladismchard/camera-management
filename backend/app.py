@@ -354,13 +354,19 @@ def get_stitched(filename):
 
 @app.route('/health')
 def health():
+    if camera is None:
+        return jsonify({'status': 'error', 'camera': False}), 503
+    
+    img_h, img_w = camera.capture_single().shape[:2] if camera.capture_single() is not None else (720, 1280)
+    
     return jsonify({
         'status': 'ok' if camera is not None else 'error',
         'camera': camera is not None,
         'detector': detector is not None,
         'stitcher': stitcher is not None,
         'autofocus': autofocus is not None,
-        'image_count': stitcher.get_count() if stitcher else 0
+        'image_count': stitcher.get_count() if stitcher else 0,
+        'dimensions': {'width': img_w, 'height': img_h}
     })
 
 @app.route('/focus/mode', methods=['GET'])
