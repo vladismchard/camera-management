@@ -77,7 +77,6 @@ class ImageZoomPan {
         }, { passive: false });
 
         this.wrapper.addEventListener('mousedown', (e) => {
-            if (this.scale <= 1) return;
             e.preventDefault();
             this.panning = true;
             this.startX = e.clientX - this.pointX;

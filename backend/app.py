@@ -101,7 +101,8 @@ def generate_frames():
                 
                 logger.debug(f"Crop frame: ({x_start}, {y_start}) -> ({x_end}, {y_end}), frame size: {img_w}x{img_h}")
                 frame = frame[y_start:y_end, x_start:x_end]
-
+            
+            # IMPORTANT: Focus check must be done on the CROPPED frame if zoom is active
             if auto_focus_mode:
                 focus_info = detector.check_focus(frame)
                 annotated_frame = _annotate_frame(frame, focus_info)
