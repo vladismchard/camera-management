@@ -356,9 +356,13 @@ def get_stitched(filename):
 def health():
     if camera is None:
         return jsonify({'status': 'error', 'camera': False}), 503
-    
-    img_h, img_w = camera.capture_single().shape[:2] if camera.capture_single() is not None else (720, 1280)
-    
+
+    frame = camera.capture_single()
+    if frame is None:
+        img_h, img_w = 720, 1280
+    else:
+        img_h, img_w = frame.shape[:2]
+
     return jsonify({
         'status': 'ok' if camera is not None else 'error',
         'camera': camera is not None,

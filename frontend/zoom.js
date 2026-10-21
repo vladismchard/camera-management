@@ -1,234 +1,242 @@
-class ImageZoomPan {
-    constructor(imageElement) {
-        if (!imageElement) return;
-        this.img = imageElement;
-        this.scale = 1;
-        this.pointX = 0;
-        this.pointY = 0;
-        this.panning = false;
-        this.startX = 0;
-        this.startY = 0;
-        this.baseW = 1280;
-        this.baseH = 720;
-        this.currentBackendCrop = { x: 0, y: 0, w: 1280, h: 720 };
-        this.actualImageW = 1280;
-        this.actualImageH = 720;
-        this.finalZoomTimeout = null;
-        this.waitingForCrop = false;
-        this.currentCropArea = null;
-        
-        this._wrapImage();
-        this._initEvents();
-        console.log(`[Zoom] Инициализация. Базовое разрешение: ${this.baseW}x${this.baseH}`);
+// frontend/zoom.js
+// Единая система зума/перемещения для изображения #stream.
+// Зум: только колесико мыши. Перемещение: зажатая левая кнопка и перетаскивание.
+// Сброс: двойной щелчок.
+// Все изменения отправляются на бэкенд (/set_zoom), который обрезает кадр
+// реального разрешения, поэтому захват и склейка работают по видимой области.
+
+class StreamZoom {
+    constructor() {
+        this.img = document.getElementById('stream');
+        if (!this.img) return;
+
+        this.apiUrl = window.location.protocol + '//' + window.location.hostname + ':5000';
+
+        this.state = {
+            x: 0,
+            y: 0,
+            w: 1280,
+            h: 720,
+            imgW: 1280,
+            imgH: 720
+        };
+
+        this.drag = {
+            active: false,
+            startX: 0,
+            startY: 0,
+            moved: false
+        };
+
+        this.pending = null;
+        this.sendTimer = null;
+        this.lastSent = null;
+
+        this._wrap();
+        this._bindEvents();
+        this._initState();
     }
 
-    _wrapImage() {
-        const parent = this.img.parentElement;
-        if (!parent.classList.contains('zoom-wrapper')) {
-            const wrapper = document.createElement('div');
-            wrapper.className = 'zoom-wrapper';
-            parent.insertBefore(wrapper, this.img);
-            wrapper.appendChild(this.img);
-        }
-        this.wrapper = this.img.parentElement;
-        
-        Object.assign(this.wrapper.style, {
-            overflow: 'hidden',
-            position: 'relative',
-            cursor: 'grab',
-            userSelect: 'none',
-            display: 'block',
-            width: '100%',
-            height: '100%'
-        });
-        
-        this.img.style.transformOrigin = '0 0';
-        this.img.style.pointerEvents = 'none';
-        this.img.style.display = 'block';
-        this.img.style.width = '100%';
-        this.img.style.height = '100%';
+    _wrap() {
+        this.img.draggable = false;
+        this.img.style.cursor = 'default';
+        this.img.style.userSelect = 'none';
         this.img.style.objectFit = 'contain';
     }
 
-    _initEvents() {
-        this.wrapper.addEventListener('wheel', (e) => {
-            e.preventDefault();
-            
-            const rect = this.wrapper.getBoundingClientRect();
-            const mouseX = e.clientX - rect.left;
-            const mouseY = e.clientY - rect.top;
-            
-            const xs = (mouseX - this.pointX) / this.scale;
-            const ys = (mouseY - this.pointY) / this.scale;
-            
-            // Более плавный коэффициент зума
-            const delta = e.deltaY;
-            const factor = delta < 0 ? 1.1 : 1 / 1.1;
-            
-            let newScale = this.scale * factor;
-            newScale = Math.max(1, Math.min(15, newScale));
-            
-            this.scale = newScale;
-            this.pointX = mouseX - xs * this.scale;
-            this.pointY = mouseY - ys * this.scale;
-            
-            this._clamp();
-            this._applyTransform();
-        }, { passive: false });
-
-        this.wrapper.addEventListener('mousedown', (e) => {
-            e.preventDefault();
-            this.panning = true;
-            this.startX = e.clientX - this.pointX;
-            this.startY = e.clientY - this.pointY;
-            this.wrapper.style.cursor = 'grabbing';
-        });
-
-        window.addEventListener('mousemove', (e) => {
-            if (!this.panning) return;
-            this.pointX = e.clientX - this.startX;
-            this.pointY = e.clientY - this.startY;
-            this._clamp();
-            this._applyTransform();
-        });
-
-        window.addEventListener('mouseup', () => {
-            if (!this.panning) return;
-            this.panning = false;
-            this.wrapper.style.cursor = this.scale > 1 ? 'grab' : 'default';
-        });
-
-        this.wrapper.addEventListener('dblclick', () => {
-            this._resetZoom();
-        });
+    _bindEvents() {
+        this.img.addEventListener('wheel', (e) => this.onWheel(e), { passive: false });
+        this.img.addEventListener('mousedown', (e) => this.onMouseDown(e));
+        window.addEventListener('mousemove', (e) => this.onMouseMove(e));
+        window.addEventListener('mouseup', () => this.onMouseUp());
+        this.img.addEventListener('dblclick', () => this.reset());
     }
 
-    _clamp() {
-        const ww = this.wrapper.clientWidth;
-        const wh = this.wrapper.clientHeight;
-        const iw = this.img.clientWidth * this.scale;
-        const ih = this.img.clientHeight * this.scale;
-        
-        const minX = Math.min(0, ww - iw);
-        const minY = Math.min(0, wh - ih);
-        
-        this.pointX = Math.min(0, Math.max(minX, this.pointX));
-        this.pointY = Math.min(0, Math.max(minY, this.pointY));
+    async _initState() {
+        try {
+            const response = await fetch(`${this.apiUrl}/health`);
+            const data = await response.json();
+            if (data.dimensions) {
+                this.state.imgW = data.dimensions.width;
+                this.state.imgH = data.dimensions.height;
+                this.state.w = data.dimensions.width;
+                this.state.h = data.dimensions.height;
+            }
+            await this._send({ x: 0, y: 0, w: this.state.imgW, h: this.state.imgH });
+        } catch (e) {
+            console.error('[Zoom] Не удалось получить размеры изображения:', e);
+        }
     }
 
-    _applyTransform() {
-        this.img.style.transform = `translate(${this.pointX}px, ${this.pointY}px) scale(${this.scale})`;
-        
-        if (this.finalZoomTimeout) clearTimeout(this.finalZoomTimeout);
-        
-        if (this.scale <= 1) {
-            this.finalZoomTimeout = setTimeout(() => this._sendResetToBackend(), 300);
+    _clamp(val, min, max) {
+        return Math.max(min, Math.min(max, val));
+    }
+
+    _viewRect() {
+        const rect = this.img.getBoundingClientRect();
+        const containerW = rect.width;
+        const containerH = rect.height;
+        if (containerW === 0 || containerH === 0) return rect;
+
+        const imgRatio = this.state.w / this.state.h;
+        const boxRatio = containerW / containerH;
+
+        if (imgRatio > boxRatio) {
+            const h = containerW / imgRatio;
+            return {
+                left: rect.left,
+                top: rect.top + (containerH - h) / 2,
+                width: containerW,
+                height: h
+            };
+        }
+        const w = containerH * imgRatio;
+        return {
+            left: rect.left + (containerW - w) / 2,
+            top: rect.top,
+            width: w,
+            height: containerH
+        };
+    }
+
+    _cursorPosition(e) {
+        const view = this._viewRect();
+        const fx = (e.clientX - view.left) / view.width;
+        const fy = (e.clientY - view.top) / view.height;
+        return {
+            imgX: fx * this.state.w,
+            imgY: fy * this.state.h
+        };
+    }
+
+    onWheel(e) {
+        e.preventDefault();
+
+        const delta = e.deltaY;
+        const factor = delta < 0 ? 1 / 1.1 : 1.1;
+
+        const { imgX, imgY } = this._cursorPosition(e);
+
+        let newW = this.state.w * factor;
+        let newH = this.state.h * factor;
+
+        const minW = Math.max(32, this.state.imgW * 0.05);
+        const minH = Math.max(32, this.state.imgH * 0.05);
+
+        newW = this._clamp(newW, minW, this.state.imgW);
+        newH = this._clamp(newH, minH, this.state.imgH);
+
+        const ratioX = newW / this.state.w;
+        const ratioY = newH / this.state.h;
+
+        let newX = this.state.x + imgX - imgX * ratioX;
+        let newY = this.state.y + imgY - imgY * ratioY;
+
+        newX = this._clamp(newX, 0, this.state.imgW - newW);
+        newY = this._clamp(newY, 0, this.state.imgH - newH);
+
+        this.state.x = Math.round(newX);
+        this.state.y = Math.round(newY);
+        this.state.w = Math.round(newW);
+        this.state.h = Math.round(newH);
+
+        this._queueSend();
+    }
+
+    onMouseDown(e) {
+        if (e.button !== 0) return;
+        e.preventDefault();
+
+        this.drag.active = true;
+        this.drag.moved = false;
+        this.drag.startX = e.clientX;
+        this.drag.startY = e.clientY;
+        this.img.style.cursor = 'grabbing';
+    }
+
+    onMouseMove(e) {
+        if (!this.drag.active) return;
+
+        const dx = e.clientX - this.drag.startX;
+        const dy = e.clientY - this.drag.startY;
+
+        if (Math.abs(dx) < 3 && Math.abs(dy) < 3) return;
+
+        if (!this.drag.moved) {
+            this.drag.moved = true;
+            this.drag.startX = e.clientX;
+            this.drag.startY = e.clientY;
             return;
         }
-        
-        this.finalZoomTimeout = setTimeout(() => {
-            this._sendZoomToBackend();
-        }, 400);
+
+        const view = this._viewRect();
+        const scaleX = this.state.w / view.width;
+        const scaleY = this.state.h / view.height;
+
+        let newX = this.state.x - dx * scaleX;
+        let newY = this.state.y - dy * scaleY;
+
+        newX = this._clamp(newX, 0, this.state.imgW - this.state.w);
+        newY = this._clamp(newY, 0, this.state.imgH - this.state.h);
+
+        this.state.x = Math.round(newX);
+        this.state.y = Math.round(newY);
+
+        this.drag.startX = e.clientX;
+        this.drag.startY = e.clientY;
+
+        this.img.style.cursor = 'grabbing';
+        this._queueSend();
     }
 
-    _resetZoom() {
-        this.scale = 1;
-        this.pointX = 0;
-        this.pointY = 0;
-        this.img.style.transition = 'transform 0.2s ease-out';
-        this._applyTransform();
-        setTimeout(() => { this.img.style.transition = ''; }, 200);
-        this.wrapper.style.cursor = 'default';
+    onMouseUp() {
+        this.drag.active = false;
+        this.img.style.cursor = 'default';
     }
 
-    _sendResetToBackend() {
-        if (this.currentBackendCrop.x === 0 && this.currentBackendCrop.y === 0 && 
-            this.currentBackendCrop.w === this.baseW && this.currentBackendCrop.h === this.baseH) return;
-
-        this.waitingForCrop = true;
-        fetch(`${window.location.protocol}//${window.location.hostname}:5000/set_zoom`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ x: 0, y: 0, w: this.baseW, h: this.baseH })
-        })
-        .then(() => {
-            setTimeout(() => {
-                this.currentBackendCrop = { x: 0, y: 0, w: this.baseW, h: this.baseH };
-                this.actualImageW = this.baseW;
-                this.actualImageH = this.baseH;
-                this.waitingForCrop = false;
-            }, 300);
-        })
-        .catch(() => { this.waitingForCrop = false; });
+    async reset() {
+        this.state.x = 0;
+        this.state.y = 0;
+        this.state.w = this.state.imgW;
+        this.state.h = this.state.imgH;
+        await this._send({ x: 0, y: 0, w: this.state.imgW, h: this.state.imgH });
     }
 
-    _sendZoomToBackend() {
-        const rect = this.wrapper.getBoundingClientRect();
-        const domW = this.img.clientWidth;
-        const domH = this.img.clientHeight;
-        if (!domW || !domH) return;
+    _queueSend() {
+        this.pending = { x: this.state.x, y: this.state.y, w: this.state.w, h: this.state.h };
 
-        // The image in the DOM (domW, domH) is the CURRENT cropped image from the backend.
-        // We need to map the frontend zoom (this.scale) back to the original 1280x720 resolution.
-        
-        // Current crop parameters from backend
-        const bX = this.currentBackendCrop.x;
-        const bY = this.currentBackendCrop.y;
-        const bW = this.currentBackendCrop.w;
-        const bH = this.currentBackendCrop.h;
+        if (this.sendTimer) return;
 
-        // Ratio between backend crop and actual DOM size
-        const ratioX = bW / domW;
-        const ratioY = bH / domH;
+        this.sendTimer = setTimeout(() => {
+            this.sendTimer = null;
+            if (this.pending) {
+                const payload = this.pending;
+                this.pending = null;
+                this._send(payload);
+            }
+        }, 60);
+    }
 
-        // Calculate how much of the CURRENT image we are showing
-        const viewW = rect.width / this.scale;
-        const viewH = rect.height / this.scale;
-        const viewX = -this.pointX / this.scale;
-        const viewY = -this.pointY / this.scale;
+    async _send(payload) {
+        if (this.lastSent &&
+            this.lastSent.x === payload.x &&
+            this.lastSent.y === payload.y &&
+            this.lastSent.w === payload.w &&
+            this.lastSent.h === payload.h) return;
 
-        // Convert this view window into the original 1280x720 space
-        let x = Math.round(bX + viewX * ratioX);
-        let y = Math.round(bY + viewY * ratioY);
-        let w = Math.round(viewW * ratioX);
-        let h = Math.round(viewH * ratioY);
-
-        // Clamp to original image boundaries
-        x = Math.max(0, Math.min(x, this.baseW));
-        y = Math.max(0, Math.min(y, this.baseH));
-        w = Math.min(this.baseW - x, w);
-        h = Math.min(this.baseH - y, h);
-
-        if (this.currentCropArea && this.currentCropArea.x === x && this.currentCropArea.y === y && 
-            this.currentCropArea.w === w && this.currentCropArea.h === h) return;
-
-        this.currentCropArea = { x, y, w, h };
-        this.waitingForCrop = true;
-
-        fetch(`${window.location.protocol}//${window.location.hostname}:5000/set_zoom`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ x, y, w, h })
-        })
-        .then(() => {
-            setTimeout(() => {
-                this.currentBackendCrop = { x, y, w, h };
-                this.actualImageW = w;
-                this.actualImageH = h;
-                this.waitingForCrop = false;
-            }, 300);
-        })
-        .catch(() => { this.waitingForCrop = false; });
+        try {
+            await fetch(`${this.apiUrl}/set_zoom`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            this.lastSent = payload;
+        } catch (e) {
+            console.error('[Zoom] Ошибка отправки области:', e);
+        }
     }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    const streamImg = document.getElementById('stream');
-    if (streamImg) {
-        if (streamImg.complete) {
-            new ImageZoomPan(streamImg);
-        } else {
-            streamImg.addEventListener('load', () => new ImageZoomPan(streamImg), { once: true });
-        }
-    }
+    new StreamZoom();
 });

@@ -14,109 +14,15 @@ class StreamUI {
             applyThresholdBtn: document.getElementById('applyThresholdBtn'),
         };
 
-        this.zoomState = {
-            x: 0,
-            y: 0,
-            w: 1280,
-            h: 720,
-            imgW: 1280,
-            imgH: 720,
-            isDragging: false,
-            lastX: 0,
-            lastY: 0
-        };
-
         this.modeToggle = new FocusModeToggle(this.apiUrl);
         this.modeToggle.onChange((autoMode) => this.onModeChanged(autoMode));
 
         this.checkHealthAndInit();
-        this.initZoomEvents();
-        this.resetZoomOnLoad();
         this.elements.checkFocusBtn.addEventListener('click', () => this.checkFocus());
         this.elements.applyThresholdBtn.addEventListener('click', () => this.applyThreshold());
 
         this.loadThresholdSettings();
         setInterval(() => this.fetchMetrics(), 2000);
-    }
-
-    initZoomEvents() {
-        const stream = this.elements.stream;
-
-        stream.addEventListener('wheel', (e) => {
-            e.preventDefault();
-            const delta = e.deltaY;
-            const zoomFactor = delta > 0 ? 1.1 : 0.9;
-            
-            const newW = Math.max(100, Math.min(this.zoomState.imgW, this.zoomState.w * zoomFactor));
-            const newH = Math.max(100, Math.min(this.zoomState.imgH, this.zoomState.h * zoomFactor));
-            
-            // Zoom towards the mouse cursor
-            const rect = stream.getBoundingClientRect();
-            const mouseX = (e.clientX - rect.left) / rect.width;
-            const mouseY = (e.clientY - rect.top) / rect.height;
-            
-            const dx = (newW - this.zoomState.w) * mouseX;
-            const dy = (newH - this.zoomState.h) * mouseY;
-            
-            this.zoomState.x = this.clamp(this.zoomState.x - dx / 2, 0, this.zoomState.imgW - newW);
-            this.zoomState.y = this.clamp(this.zoomState.y - dy / 2, 0, this.zoomState.imgH - newH);
-            this.zoomState.w = newW;
-            this.zoomState.h = newH;
-            
-            this.updateZoom();
-        }, { passive: false });
-
-        stream.addEventListener('mousedown', (e) => {
-            this.zoomState.isDragging = true;
-            this.zoomState.lastX = e.clientX;
-            this.zoomState.lastY = e.clientY;
-            stream.style.cursor = 'grabbing';
-        });
-
-        window.addEventListener('mousemove', (e) => {
-            if (!this.zoomState.isDragging) return;
-            
-            const dx = e.clientX - this.zoomState.lastX;
-            const dy = e.clientY - this.zoomState.lastY;
-            
-            // Adjust movement speed based on zoom level
-            const moveX = dx * (this.zoomState.w / stream.offsetWidth);
-            const moveY = dy * (this.zoomState.h / stream.offsetHeight);
-            
-            this.zoomState.x = this.clamp(this.zoomState.x - moveX, 0, this.zoomState.imgW - this.zoomState.w);
-            this.zoomState.y = this.clamp(this.zoomState.y - moveY, 0, this.zoomState.imgH - this.zoomState.h);
-            
-            this.zoomState.lastX = e.clientX;
-            this.zoomState.lastY = e.clientY;
-            
-            this.updateZoom();
-        });
-
-        window.addEventListener('mouseup', () => {
-            this.zoomState.isDragging = false;
-            stream.style.cursor = 'default';
-        });
-    }
-
-    clamp(val, min, max) {
-        return Math.max(min, Math.min(max, val));
-    }
-
-    async updateZoom() {
-        try {
-            await fetch(`${this.apiUrl}/set_zoom`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    x: Math.round(this.zoomState.x), 
-                    y: Math.round(this.zoomState.y), 
-                    w: Math.round(this.zoomState.w), 
-                    h: Math.round(this.zoomState.h) 
-                })
-            });
-        } catch (e) {
-            console.error('Failed to update zoom:', e);
-        }
     }
 
     async checkHealthAndInit() {
@@ -129,24 +35,11 @@ class StreamUI {
                 return;
             }
             
-            if (data.dimensions) {
-                this.zoomState.imgW = data.dimensions.width;
-                this.zoomState.imgH = data.dimensions.height;
-            }
-            
             this.elements.stream.src = `${this.apiUrl}/stream`;
         } catch (error) {
             console.error('Health check failed:', error);
             window.location.href = 'error.html';
         }
-    }
-
-    async resetZoomOnLoad() {
-        this.zoomState = {
-            x: 0, y: 0, w: 1280, h: 720, imgW: 1280, imgH: 720,
-            isDragging: false, lastX: 0, lastY: 0
-        };
-        await this.updateZoom();
     }
 
     async loadThresholdSettings() {
